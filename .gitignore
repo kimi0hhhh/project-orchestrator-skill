@@ -1,0 +1,17 @@
+# 编辑器/系统
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# 本地实验产物（发布前可不带）
+demo/
+exp/
+probe/
+
+# 运行时本地数据（若把 runtime 放进仓库）
+runtime/projects/*/state.json
+runtime/projects/*/ledger.jsonl
+runtime/.port
+runtime/.server.pid
+runtime/server.log
