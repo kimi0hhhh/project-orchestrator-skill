@@ -59,10 +59,10 @@
 
 ## 5. 模型路由实测 / Model routing (field notes)
 
-- 契约 frontmatter 平 id（`deepseek-v4.1-flash`）→ 实测仍走套餐默认模型（客户端 `parseModelRef` 把平 id 归入默认供应商，找不到即静默回落）；
-- 正确格式 `"<providerId>/<modelId>"`；
+- 契约 frontmatter 平 id（如 `model: "deepseek-v4.1-flash"`，不带供应商限定）→ 实测仍走套餐默认模型：客户端的模型引用解析器会把平 id 归入默认供应商，找不到即**静默回落**主模型；
+- 正确格式 `"<providerId>/<modelId>"`（providerId 即模型供应商配置的主键）；
 - 角色清单会话启动时加载：会话中途增改契约/新角色均不生效（新角色派发直接报 not found）；
-- 验证以计费库 `model_usage.model_id` 为准（本仓库所有"实际模型"结论皆出自该表）。
+- 验证以客户端计费库的模型用量表 `model_id` 字段为准（本仓库所有"实际模型"结论皆出自该表），不要信"声明"。
 
 ## 6. 成本汇总 / Cost accounting
 
