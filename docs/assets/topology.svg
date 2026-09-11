@@ -1,50 +1,130 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
-  <rect width="760" height="330" fill="#ffffff"/>
-  <text x="24" y="36" font-size="19" font-weight="700" fill="#1f2328">六角色拓扑：单写手 · 单层编排 · 门禁</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="800" viewBox="0 0 960 800" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbfcfe"/><stop offset="1" stop-color="#eef2f8"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2f6fdb"/><stop offset="1" stop-color="#5a8df0"/>
+    </linearGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#1a2b4a" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#8fa3c0"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="800" fill="url(#bg)" rx="14"/>
+  <text x="480" y="42" font-size="21" font-weight="700" fill="#1f2328" text-anchor="middle">Project Orchestrator · 多 Agent 协作拓扑</text>
+  <text x="480" y="63" font-size="12" fill="#778ba3" text-anchor="middle">单写手 · 单层编排 · 只读参谋 · 门禁不放水</text>
 
   <!-- 用户 -->
-  <rect x="270" y="60" width="120" height="34" rx="8" fill="#fff8e1" stroke="#f0a020"/>
-  <text x="330" y="82" font-size="14" text-anchor="middle" fill="#7a5200">用户</text>
-  <line x1="330" y1="94" x2="330" y2="118" stroke="#999"/>
-  <text x="345" y="112" font-size="11" fill="#888">只在4类情况打断</text>
+  <rect x="395" y="84" width="170" height="36" rx="18" fill="#ffffff" stroke="#d0d7de" filter="url(#sh)"/>
+  <text x="480" y="107" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle">👤 用户</text>
+  <line x1="480" y1="120" x2="480" y2="144" stroke="#8fa3c0" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="494" y="138" font-size="11" fill="#778ba3">只在 4 类情况打断</text>
 
-  <!-- 主Agent -->
-  <rect x="220" y="118" width="220" height="40" rx="10" fill="#e7f0ff" stroke="#2f6fdb" stroke-width="2"/>
-  <text x="330" y="136" font-size="14" font-weight="700" text-anchor="middle" fill="#1a4c9e">主 Agent · 项目负责人</text>
-  <text x="330" y="152" font-size="11" text-anchor="middle" fill="#4a6fa5">派发 · 验收 · 门禁 · 分诊（不下场干活）</text>
+  <!-- 指挥台 -->
+  <rect x="270" y="148" width="420" height="64" rx="14" fill="url(#hero)" filter="url(#sh)"/>
+  <text x="480" y="175" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">🧭 主 Agent · 项目负责人</text>
+  <text x="480" y="196" font-size="12" fill="#dce7fb" text-anchor="middle">派发 · 验收 · 门禁 · 分诊 —— 不下场干活</text>
 
-  <!-- 六角色 -->
-  <g font-size="12" text-anchor="middle">
-    <line x1="270" y1="158" x2="100" y2="200" stroke="#bbb"/><line x1="300" y1="158" x2="215" y2="200" stroke="#bbb"/>
-    <line x1="322" y1="158" x2="360" y2="200" stroke="#bbb"/><line x1="355" y1="158" x2="475" y2="200" stroke="#bbb"/>
-    <line x1="390" y1="158" x2="590" y2="200" stroke="#bbb"/><line x1="420" y1="160" x2="680" y2="200" stroke="#bbb"/>
-    <rect x="40"  y="200" width="120" height="46" rx="8" fill="#eaf3ff" stroke="#4c8dff"/>
-    <rect x="160" y="200" width="120" height="46" rx="8" fill="#f3ecff" stroke="#9b6ef3"/>
-    <rect x="300" y="200" width="120" height="46" rx="8" fill="#e8f7f0" stroke="#2fb380"/>
-    <rect x="430" y="200" width="120" height="46" rx="8" fill="#fff3e2" stroke="#e6a23c"/>
-    <rect x="540" y="200" width="110" height="46" rx="8" fill="#fdeceb" stroke="#c0392b"/>
-    <rect x="660" y="200" width="90"  height="46" rx="8" fill="#e6f7f5" stroke="#16a085"/>
-    <text x="100" y="219" fill="#1a4c9e" font-weight="700">01 产品经理</text><text x="100" y="236" fill="#667">PRD·UI四态·终验</text>
-    <text x="220" y="219" fill="#5b3ba8" font-weight="700">02 架构师</text><text x="220" y="236" fill="#667">09契约=唯一法律</text>
-    <text x="360" y="219" fill="#177a53" font-weight="700">03 前端</text><text x="360" y="236" fill="#667">造壳不造假</text>
-    <text x="490" y="219" fill="#9a6a1c" font-weight="700">04 后端</text><text x="490" y="236" fill="#667">业务逻辑权威</text>
-    <text x="595" y="219" fill="#93291f" font-weight="700">05 开发组长</text><text x="595" y="236" fill="#667">评审·缺陷分流</text>
-    <text x="705" y="219" fill="#0f6e63" font-weight="700">06 测试</text><text x="705" y="236" fill="#667">让它露馅</text>
+  <!-- 连接线 -->
+  <g stroke="#8fa3c0" stroke-width="1.4" fill="none">
+    <path d="M 390 212 C 340 240 300 252 285 276" marker-end="url(#arr)"/>
+    <path d="M 570 212 C 620 240 660 252 675 276" marker-end="url(#arr)"/>
+    <path d="M 390 212 C 350 260 340 280 335 300" opacity="0"/>
+    <path d="M 480 212 L 480 396" stroke-dasharray="0" opacity="0"/>
+    <path d="M 460 212 C 430 300 420 340 415 376" marker-end="url(#arr)"/>
+    <path d="M 500 212 C 530 300 540 340 545 376" marker-end="url(#arr)"/>
+    <path d="M 390 200 C 300 280 260 330 250 376" opacity="0"/>
+    <path d="M 570 200 C 660 280 700 330 710 376" opacity="0"/>
+    <path d="M 370 216 C 290 280 250 340 245 516" opacity="0"/>
+    <path d="M 480 212 C 300 340 160 420 152 516" marker-end="url(#arr)"/>
+    <path d="M 580 216 C 700 340 800 420 806 516" marker-end="url(#arr)"/>
   </g>
 
-  <!-- 关系标注 -->
-  <g font-size="11" fill="#8a6d1a">
-    <path d="M 150 205 Q 185 190 215 205" fill="none" stroke="#c9a227" stroke-dasharray="4 3"/>
-    <text x="120" y="192" text-anchor="middle" fill="#8a6d1a">会签挑刺</text>
-    <path d="M 372 250 Q 425 268 478 250" fill="none" stroke="#4a9" stroke-dasharray="4 3"/>
-    <text x="425" y="266" text-anchor="middle" fill="#3c8571">文件隔离 · 可并行（≤3 并发）</text>
-    <path d="M 597 246 Q 560 275 500 250" fill="none" stroke="#c0392b" stroke-dasharray="4 3"/>
-    <text x="548" y="282" text-anchor="middle" fill="#b03a2e">缺陷定性分流</text>
-    <path d="M 668 246 Q 640 275 602 250" fill="none" stroke="#16a085" stroke-dasharray="4 3"/>
-    <text x="700" y="282" text-anchor="middle" fill="#0f6e63">缺陷单+根因</text>
+  <!-- ============ 卡片网格 2 列 × 3 行 ============ -->
+  <g filter="url(#sh)">
+    <!-- PM -->
+    <rect x="140" y="280" width="290" height="88" rx="12" fill="#ffffff"/>
+    <rect x="140" y="280" width="6" height="88" rx="3" fill="#4c8dff"/>
+    <circle cx="180" cy="310" r="16" fill="#e7f0ff"/><text x="180" y="315" font-size="15" text-anchor="middle">📋</text>
+    <text x="208" y="308" font-size="14.5" font-weight="700" fill="#1f2328">产品经理 <tspan fill="#8b949e" font-size="11">S1 需求 · S6 终验</tspan></text>
+    <text x="208" y="326" font-size="11.5" fill="#778ba3">需求四段 · PRD · UI 四态 · 验收口径</text>
+    <rect x="208" y="338" width="72" height="20" rx="10" fill="#f0f6ff"/><text x="244" y="352" font-size="10.5" fill="#2f6fdb" text-anchor="middle">02-prd</text>
+    <rect x="286" y="338" width="80" height="20" rx="10" fill="#f0f6ff"/><text x="326" y="352" font-size="10.5" fill="#2f6fdb" text-anchor="middle">03-ui-design</text>
+    <!-- 架构师 -->
+    <rect x="530" y="280" width="290" height="88" rx="12" fill="#ffffff"/>
+    <rect x="530" y="280" width="6" height="88" rx="3" fill="#9b6ef3"/>
+    <circle cx="570" cy="310" r="16" fill="#f3ecff"/><text x="570" y="315" font-size="15" text-anchor="middle">🏗️</text>
+    <text x="598" y="308" font-size="14.5" font-weight="700" fill="#1f2328">架构师 <tspan fill="#8b949e" font-size="11">S2 架构</tspan></text>
+    <text x="598" y="326" font-size="11.5" fill="#778ba3">系统/前后端架构 · 接口契约</text>
+    <rect x="598" y="338" width="130" height="20" rx="10" fill="#f6f0ff"/><text x="663" y="352" font-size="10.5" fill="#7c4de0" text-anchor="middle">09-api-contract ⚖️ 唯一法律</text>
+    <!-- 前端 -->
+    <rect x="140" y="380" width="290" height="88" rx="12" fill="#ffffff"/>
+    <rect x="140" y="380" width="6" height="88" rx="3" fill="#2fb380"/>
+    <circle cx="180" cy="410" r="16" fill="#e8f7f0"/><text x="180" y="415" font-size="15" text-anchor="middle">💻</text>
+    <text x="208" y="408" font-size="14.5" font-weight="700" fill="#1f2328">前端开发 <tspan fill="#8b949e" font-size="11">S3 开发</tspan></text>
+    <text x="208" y="426" font-size="11.5" fill="#778ba3">页面与交互 · 空载错成四态</text>
+    <rect x="208" y="438" width="80" height="20" rx="10" fill="#e8f7f0"/><text x="248" y="452" font-size="10.5" fill="#1f8a5f" text-anchor="middle">11-frontend</text>
+    <rect x="294" y="438" width="76" height="20" rx="10" fill="#e8f7f0"/><text x="332" y="452" font-size="10.5" fill="#1f8a5f" text-anchor="middle">12-iface-req</text>
+    <!-- 后端 -->
+    <rect x="530" y="380" width="290" height="88" rx="12" fill="#ffffff"/>
+    <rect x="530" y="380" width="6" height="88" rx="3" fill="#e6a23c"/>
+    <circle cx="570" cy="410" r="16" fill="#fff3e2"/><text x="570" y="415" font-size="15" text-anchor="middle">⚙️</text>
+    <text x="598" y="408" font-size="14.5" font-weight="700" fill="#1f2328">后端开发 <tspan fill="#8b949e" font-size="11">S3 开发</tspan></text>
+    <text x="598" y="426" font-size="11.5" fill="#778ba3">业务逻辑唯一权威 · API 实现</text>
+    <rect x="598" y="438" width="80" height="20" rx="10" fill="#fff3e2"/><text x="638" y="452" font-size="10.5" fill="#b07a1a" text-anchor="middle">13-backend</text>
+    <rect x="684" y="438" width="76" height="20" rx="10" fill="#fff3e2"/><text x="722" y="452" font-size="10.5" fill="#b07a1a" text-anchor="middle">14-impl-rep</text>
+    <!-- 组长 -->
+    <rect x="140" y="516" width="290" height="88" rx="12" fill="#ffffff"/>
+    <rect x="140" y="516" width="6" height="88" rx="3" fill="#c0392b"/>
+    <circle cx="180" cy="546" r="16" fill="#fdeceb"/><text x="180" y="551" font-size="15" text-anchor="middle">🛡️</text>
+    <text x="208" y="544" font-size="14.5" font-weight="700" fill="#1f2328">开发组长 <tspan fill="#8b949e" font-size="11">S4 集成</tspan></text>
+    <text x="208" y="562" font-size="11.5" fill="#778ba3">六项偏差检查 · 评审 · 缺陷定性分流</text>
+    <rect x="208" y="574" width="150" height="20" rx="10" fill="#fdeceb"/><text x="283" y="588" font-size="10.5" fill="#c0392b" text-anchor="middle">15-code-review · 16-build</text>
+    <!-- QA -->
+    <rect x="530" y="516" width="290" height="88" rx="12" fill="#ffffff"/>
+    <rect x="530" y="516" width="6" height="88" rx="3" fill="#16a085"/>
+    <circle cx="570" cy="546" r="16" fill="#e6f7f5"/><text x="570" y="551" font-size="15" text-anchor="middle">🔎</text>
+    <text x="598" y="544" font-size="14.5" font-weight="700" fill="#1f2328">测试 <tspan fill="#8b949e" font-size="11">S5 测试</tspan></text>
+    <text x="598" y="562" font-size="11.5" fill="#778ba3">测试计划 · 执行 · 缺陷单+根因</text>
+    <rect x="598" y="574" width="150" height="20" rx="10" fill="#e6f7f5"/><text x="673" y="588" font-size="10.5" fill="#0f6e63" text-anchor="middle">17-plan · 18-report · 缺陷</text>
   </g>
 
-  <!-- 底部门禁条 -->
-  <rect x="40" y="292" width="710" height="26" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
-  <text x="395" y="310" font-size="12" text-anchor="middle" fill="#57606a">门禁：每阶段 PASS / CONCERN / FAIL —— CONCERN 必须登记；S7 交付需 dev-lead + qa + PM 三签</text>
+  <!-- 关系虚线 -->
+  <g stroke-dasharray="5 4" fill="none" stroke-width="1.4">
+    <path d="M 430 310 L 530 310" stroke="#c9a227"/>
+    <text x="480" y="302" font-size="10.5" fill="#a3861c" text-anchor="middle">会签挑刺</text>
+    <path d="M 430 424 L 530 424" stroke="#3c8571"/>
+    <text x="480" y="416" font-size="10.5" fill="#3c8571" text-anchor="middle">文件隔离 · 可并行</text>
+    <path d="M 350 468 C 420 492 470 500 520 516" stroke="#c0392b"/>
+    <path d="M 610 468 C 570 492 520 502 470 516" stroke="#c0392b"/>
+    <path d="M 675 468 C 690 490 690 500 680 516" stroke="#16a085"/>
+  </g>
+  <text x="480" y="500" font-size="10.5" fill="#c0392b" text-anchor="middle">交付物提测 → 评审 → 缺陷单 → 定性分流（做错了→开发 · 不该这么定义→PM · 结构撑不住→架构）</text>
+
+  <!-- 底部：门禁流 + 看板 -->
+  <rect x="60" y="636" width="520" height="130" rx="12" fill="#ffffff" stroke="#d0d7de" filter="url(#sh)"/>
+  <text x="80" y="664" font-size="13" font-weight="700" fill="#1f2328">🚦 门禁流（每阶段必经）</text>
+  <g font-size="12">
+    <rect x="80" y="680" width="92" height="28" rx="14" fill="#e8f7f0"/><text x="126" y="699" text-anchor="middle" fill="#1a7f37">PASS 放行</text>
+    <line x1="178" y1="694" x2="206" y2="694" stroke="#8fa3c0" marker-end="url(#arr)"/>
+    <rect x="212" y="680" width="170" height="28" rx="14" fill="#fff8e1"/><text x="297" y="699" text-anchor="middle" fill="#9a6700">CONCERN 登记未决项</text>
+    <line x1="388" y1="694" x2="416" y2="694" stroke="#8fa3c0" marker-end="url(#arr)"/>
+    <rect x="422" y="680" width="100" height="28" rx="14" fill="#fdeceb"/><text x="472" y="699" text-anchor="middle" fill="#cf222e">FAIL 退回</text>
+    <text x="80" y="740" fill="#57606a" font-size="11.5">S7 交付需三签：开发组长 ✓ 测试 ✓ 产品经理 ✓ —— 缺一不交付，交付附 retro 四问</text>
+  </g>
+
+  <rect x="610" y="636" width="290" height="130" rx="12" fill="#ffffff" stroke="#d0d7de" filter="url(#sh)"/>
+  <text x="755" y="664" font-size="13" font-weight="700" fill="#1f2328" text-anchor="middle">📊 运行时看板（核心亮点）</text>
+  <g font-size="11" fill="#57606a">
+    <text x="626" y="686">· 阶段流水线 + 作战地图（加权进度）</text>
+    <text x="626" y="703">· agent 卡片：模型三口径 / 静默计时</text>
+    <text x="626" y="720">· token 账本 · 任务与工件 · 消息流</text>
+    <text x="626" y="737">· 看门狗 + 一键恢复（同 id 续跑）</text>
+    <text x="626" y="754">详见 docs/BOARD.md</text>
+  </g>
+  <path d="M 610 690 C 590 690 585 660 570 610" stroke="#8fa3c0" stroke-width="1.2" fill="none" stroke-dasharray="5 4"/>
 </svg>

@@ -19,7 +19,13 @@
 - **门禁不放水**：每个阶段有 PASS/CONCERN/FAIL 判定，CONCERN 必须登记未决项；
 - **看得见**：自带运行时看板（浏览器实时视图：阶段进度、agent 卡片、token 账本、缺陷分流、时间线）。
 
-## 架构一图流 / Architecture at a glance
+## 完整工程拆解 → 落地：S0–S7 交付流水线
+
+![S0-S7 交付流水线](docs/assets/pipeline.svg)
+
+每个阶段一个可问责角色、一组编号工件、一道门禁；前后端在 S3 文件隔离并行，S7 三签缺一不交付。架构详情见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+
+## 架构拓扑
 
 ![角色拓扑](docs/assets/topology.svg)
 
