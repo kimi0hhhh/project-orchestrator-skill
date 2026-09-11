@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="250" viewBox="0 0 720 250" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="720" height="250" fill="#ffffff"/>
+  <text x="24" y="32" font-size="17" font-weight="700" fill="#1f2328">端到端小产品：两条流水线盲评对比（40 分制）</text>
+
+  <g font-size="12">
+    <text x="24" y="80" fill="#1f2328">B2 本框架（9 次派发）</text>
+    <rect x="240" y="64" width="350" height="24" rx="4" fill="#2da44e"/>
+    <text x="600" y="81" fill="#1a7f37" font-weight="700">35 / 40（+13%）· 357k tok · 2.2×</text>
+
+    <text x="24" y="130" fill="#1f2328">B1 传统单角色串行（4 次派发）</text>
+    <rect x="240" y="114" width="310" height="24" rx="4" fill="#8b949e"/>
+    <text x="560" y="131" fill="#57606a" font-weight="700">31 / 40 · 163.5k tok</text>
+  </g>
+
+  <!-- 分项小注 -->
+  <g font-size="12" fill="#57606a">
+    <text x="24" y="176">分项（B1 → B2）：PRD 6→8 · 架构 7→7 · 代码 10→11 · 测试计划 8→9</text>
+    <text x="24" y="196">B2 赢在：口径精确性、时间类边界测试（5 组 vs 0 组）、草稿期拦下逻辑硬伤</text>
+    <text x="24" y="216">B2 的新失败模式：契约精度向代码传导衰减（parseInt 类接缝 bug）→ 已加"契约↔代码对齐"门禁</text>
+  </g>
+
+  <rect x="24" y="228" width="672" height="2" fill="#eaeef2"/>
+</svg>

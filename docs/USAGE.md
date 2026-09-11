@@ -30,12 +30,15 @@ powershell -File install.ps1
 
 主 Agent 会执行固定唤醒流程：
 
-1. 读工作区的 `ORCHESTRATOR.md`（阶段状态机与派发命令模板）
-2. 读 `.zcode/state/board.md`（当前阶段与进度，自动生成）
-3. 读 `docs/PROJECT_BRIEF.md`（产品输入书——**你需要填这个**）
-4. 读 `.zcode/state/open-issues.md`（未决项）
-5. 启动看板服务（`python runtime/daemon.py 8788`）并打开浏览器
-6. 向你汇报四件事：**当前阶段 / 谁在跑谁待命 / 下一步打算 / 需要你拍板什么**
+```mermaid
+flowchart TD
+    W["唤醒语<br/>「启动主 Agent」等"] --> R1["读 ORCHESTRATOR.md<br/>（阶段状态机+派发模板）"]
+    R1 --> R2["读 board.md<br/>（当前阶段与进度）"]
+    R2 --> R3["读 PROJECT_BRIEF.md<br/>（产品输入书·你需要填）"]
+    R3 --> R4["读 open-issues.md<br/>（未决项）"]
+    R4 --> R5["起看板 daemon :8788<br/>+ 打开浏览器"]
+    R5 --> R6["向你汇报四件事：<br/>阶段 / 谁在跑 / 下一步 / 等你拍板什么"]
+```
 
 > English TL;DR: say any wake phrase; the orchestrator reads the workspace state files, boots the board on port 8788, and reports stage / running agents / next step / decisions needed. You fill `docs/PROJECT_BRIEF.md`.
 

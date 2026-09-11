@@ -19,6 +19,34 @@
 - **门禁不放水**：每个阶段有 PASS/CONCERN/FAIL 判定，CONCERN 必须登记未决项；
 - **看得见**：自带运行时看板（浏览器实时视图：阶段进度、agent 卡片、token 账本、缺陷分流、时间线）。
 
+## 架构一图流 / Architecture at a glance
+
+![角色拓扑](docs/assets/topology.svg)
+
+```mermaid
+flowchart TD
+    U["用户"] -->|"沟通/拍板（只在4类情况打断）"| M["主 Agent · 项目负责人<br/>派发·验收·门禁·分诊"]
+    M --> P["01 产品经理"]
+    M --> A["02 架构师"]
+    M --> F["03 前端开发"]
+    M --> B["04 后端开发"]
+    M --> L["05 开发组长"]
+    M --> Q["06 测试"]
+    P <-."会签挑刺".-> A
+    F -. "文件隔离·可并行" .-> B
+    L -->|"缺陷定性分流"| F
+    L --> B
+    Q -->|"缺陷单+根因"| L
+    M --- R[("运行时看板 runtime/<br/>阶段·账本·时间线")]
+```
+
+阶段流水线：
+
+```mermaid
+flowchart LR
+    S0["S0 立项"] --> S1["S1 需求"] --> S2["S2 架构<br/>09契约=唯一法律"] --> S3["S3 开发<br/>前后端并行"] --> S4["S4 集成"] --> S5["S5 测试"] --> S6["S6 终验"] --> S7["S7 交付·三签"]
+```
+
 仓库同时包含本轮迭代的两个进阶设计（含实验数据验证）：
 
 1. **星形参谋（Advisor pattern）**：主角色唯一写笔 + 只读参谋一轮挑刺——实测把 PRD 盲评分从 21 提到 22.5、端到端产品质量 +13%；
@@ -101,3 +129,7 @@ bash install.sh
 ## License
 
 MIT（见 [LICENSE](LICENSE)）。引用的第三方开源 skill 与研究见 [docs/CREDITS.md](docs/CREDITS.md)。
+
+## 数据隔离与隐私 / Data isolation
+
+本仓库经过泄漏审计（无路径/凭据/供应商/项目信息），审计范围与提交者规范见 [docs/SECURITY.md](docs/SECURITY.md)。发现泄漏请立即提 issue。

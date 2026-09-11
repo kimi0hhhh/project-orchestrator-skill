@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="760" height="330" fill="#ffffff"/>
+  <text x="24" y="36" font-size="19" font-weight="700" fill="#1f2328">六角色拓扑：单写手 · 单层编排 · 门禁</text>
+
+  <!-- 用户 -->
+  <rect x="270" y="60" width="120" height="34" rx="8" fill="#fff8e1" stroke="#f0a020"/>
+  <text x="330" y="82" font-size="14" text-anchor="middle" fill="#7a5200">用户</text>
+  <line x1="330" y1="94" x2="330" y2="118" stroke="#999"/>
+  <text x="345" y="112" font-size="11" fill="#888">只在4类情况打断</text>
+
+  <!-- 主Agent -->
+  <rect x="220" y="118" width="220" height="40" rx="10" fill="#e7f0ff" stroke="#2f6fdb" stroke-width="2"/>
+  <text x="330" y="136" font-size="14" font-weight="700" text-anchor="middle" fill="#1a4c9e">主 Agent · 项目负责人</text>
+  <text x="330" y="152" font-size="11" text-anchor="middle" fill="#4a6fa5">派发 · 验收 · 门禁 · 分诊（不下场干活）</text>
+
+  <!-- 六角色 -->
+  <g font-size="12" text-anchor="middle">
+    <line x1="270" y1="158" x2="100" y2="200" stroke="#bbb"/><line x1="300" y1="158" x2="215" y2="200" stroke="#bbb"/>
+    <line x1="322" y1="158" x2="360" y2="200" stroke="#bbb"/><line x1="355" y1="158" x2="475" y2="200" stroke="#bbb"/>
+    <line x1="390" y1="158" x2="590" y2="200" stroke="#bbb"/><line x1="420" y1="160" x2="680" y2="200" stroke="#bbb"/>
+    <rect x="40"  y="200" width="120" height="46" rx="8" fill="#eaf3ff" stroke="#4c8dff"/>
+    <rect x="160" y="200" width="120" height="46" rx="8" fill="#f3ecff" stroke="#9b6ef3"/>
+    <rect x="300" y="200" width="120" height="46" rx="8" fill="#e8f7f0" stroke="#2fb380"/>
+    <rect x="430" y="200" width="120" height="46" rx="8" fill="#fff3e2" stroke="#e6a23c"/>
+    <rect x="540" y="200" width="110" height="46" rx="8" fill="#fdeceb" stroke="#c0392b"/>
+    <rect x="660" y="200" width="90"  height="46" rx="8" fill="#e6f7f5" stroke="#16a085"/>
+    <text x="100" y="219" fill="#1a4c9e" font-weight="700">01 产品经理</text><text x="100" y="236" fill="#667">PRD·UI四态·终验</text>
+    <text x="220" y="219" fill="#5b3ba8" font-weight="700">02 架构师</text><text x="220" y="236" fill="#667">09契约=唯一法律</text>
+    <text x="360" y="219" fill="#177a53" font-weight="700">03 前端</text><text x="360" y="236" fill="#667">造壳不造假</text>
+    <text x="490" y="219" fill="#9a6a1c" font-weight="700">04 后端</text><text x="490" y="236" fill="#667">业务逻辑权威</text>
+    <text x="595" y="219" fill="#93291f" font-weight="700">05 开发组长</text><text x="595" y="236" fill="#667">评审·缺陷分流</text>
+    <text x="705" y="219" fill="#0f6e63" font-weight="700">06 测试</text><text x="705" y="236" fill="#667">让它露馅</text>
+  </g>
+
+  <!-- 关系标注 -->
+  <g font-size="11" fill="#8a6d1a">
+    <path d="M 150 205 Q 185 190 215 205" fill="none" stroke="#c9a227" stroke-dasharray="4 3"/>
+    <text x="120" y="192" text-anchor="middle" fill="#8a6d1a">会签挑刺</text>
+    <path d="M 372 250 Q 425 268 478 250" fill="none" stroke="#4a9" stroke-dasharray="4 3"/>
+    <text x="425" y="266" text-anchor="middle" fill="#3c8571">文件隔离 · 可并行（≤3 并发）</text>
+    <path d="M 597 246 Q 560 275 500 250" fill="none" stroke="#c0392b" stroke-dasharray="4 3"/>
+    <text x="548" y="282" text-anchor="middle" fill="#b03a2e">缺陷定性分流</text>
+    <path d="M 668 246 Q 640 275 602 250" fill="none" stroke="#16a085" stroke-dasharray="4 3"/>
+    <text x="700" y="282" text-anchor="middle" fill="#0f6e63">缺陷单+根因</text>
+  </g>
+
+  <!-- 底部门禁条 -->
+  <rect x="40" y="292" width="710" height="26" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="395" y="310" font-size="12" text-anchor="middle" fill="#57606a">门禁：每阶段 PASS / CONCERN / FAIL —— CONCERN 必须登记；S7 交付需 dev-lead + qa + PM 三签</text>
+</svg>

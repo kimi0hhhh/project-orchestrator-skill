@@ -30,6 +30,8 @@ Full usage: [docs/USAGE.md](docs/USAGE.md) (Chinese) · Architecture: [docs/ARCH
 
 ## Benchmark summary
 
+![Controlled experiment blind-judged scores](docs/assets/scores.svg)
+
 Same-task PRD, 3 conditions × 2 runs, blind-judged (30-pt scale):
 
 | Condition | Tokens/run | Score | Verdict |

@@ -36,12 +36,41 @@
 
 S0 立项 → S1 需求 → S2 架构 → S3 开发 → S4 集成 → S5 测试 → S6 终验 → S7 交付。每阶段门禁判 PASS / CONCERN / FAIL：
 
+```mermaid
+flowchart LR
+    S0["S0 立项"] --> S1["S1 需求"] --> S2["S2 架构"] --> S3["S3 开发<br/>前后端并行"] --> S4["S4 集成"] --> S5["S5 测试"] --> S6["S6 终验"] --> S7["S7 交付·三签"]
+    S2 <-."PM×架构师会签<br/>（必须串行）".-> S1
+```
+
 - **PASS** 才进下一阶段；
 - **CONCERN** 放行但登记未决项（`.zcode/state/open-issues.md`）；
 - **FAIL** 退回重做；
 - **S7 三签**：dev-lead / qa / product-manager 三方签收缺一不交付。
 
 阶段真相源是 `runtime/projects/<pid>/plan.json`；`gate-log.md` 与 `open-issues.md` 是手写真相源；`board.md` 是派生文件（`board_sync.py` 生成，勿手改）。
+
+## 3.5 参谋会运行回路 / Advisor round（v1.2）
+
+需要多视角时的标准回路：主角色唯一写笔，参谋只读挑刺一轮，门禁照常。
+
+```mermaid
+sequenceDiagram
+    participant W as 主角色（唯一写笔）
+    participant O as 主 Agent（编排）
+    participant A1 as 参谋A（只读）
+    participant A2 as 参谋B（只读）
+    W->>O: 交付草稿
+    O->>A1: 派发（草稿+允许读清单）
+    O->>A2: 派发（草稿+允许读清单）
+    A1-->>O: 挑战清单 ≤15 行（BLOCK/SHOULD/NIT）
+    A2-->>O: 挑战清单 ≤15 行（互不对话）
+    O->>O: 合并去重 · 判定吸收/驳回/升级会签
+    O->>W: 退回返修（一次）
+    W->>O: 定稿 + 逐条回应表
+    O->>O: 门禁判定 PASS/CONCERN/FAIL
+```
+
+纪律：参谋**不写工件、不担门禁**；横向一致性由主角色收敛；参谋意见与契约冲突时**契约赢**（改契约走会签）。实测吸收率 81%（EVIDENCE.md §2）。
 
 ## 4. 编排原则（为什么这样设计）/ Orchestration principles
 
