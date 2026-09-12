@@ -2,9 +2,9 @@
 
 ![Project Orchestrator framework banner](docs/assets/banner.svg)
 
-![version](https://img.shields.io/badge/version-v4.1-green) ![stage](https://img.shields.io/badge/status-beta-blue) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white) ![platform](https://img.shields.io/badge/platform-ZCode%20%7C%20OpenCode-orange) ![license](https://img.shields.io/badge/license-MIT-red) ![evidence](https://img.shields.io/badge/dev_validated-2%20real%20products-8A2BE2)
+![version](https://img.shields.io/badge/version-v4.1-green) ![stage](https://img.shields.io/badge/status-beta-blue) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white) ![platform](https://img.shields.io/badge/platform-ZCode%20%7C%20OpenCode%20%7C%20WorkBuddy%20%7C%20Universal-orange) ![license](https://img.shields.io/badge/license-MIT-red) ![evidence](https://img.shields.io/badge/dev_validated-2%20real%20products-8A2BE2)
 
-**One-liner**: An installable **multi-agent delivery framework** — *one project owner + 6 single-accountability roles + on-demand advisors + stage gates* — the main agent never touches the work itself; it dispatches, reviews, and gates. Single writer, one-layer orchestration, read-only advisors, no gate-keeping shortcuts. This is **not a tool-specific trick**: it is designed for any agent dev tool with sub-agent dispatch. **ZCode and OpenCode are the first two implementations** (this repo ships the ZCode edition first). Delivery is gated — no promise of one-shot perfection.
+**One-liner**: An installable **multi-agent delivery framework** — *one project owner + 6 single-accountability roles + on-demand advisors + stage gates* — the main agent never touches the work itself; it dispatches, reviews, and gates. Single writer, one-layer orchestration, read-only advisors, no gate-keeping shortcuts. This is **not a tool-specific trick**: it is designed for any agent dev tool with sub-agent dispatch. **Four implementations shipped**: ZCode / OpenCode / WorkBuddy / universal (see docs/VERSIONS.md). Delivery is gated — no promise of one-shot perfection.
 
 > State your requirements, answer a few short follow-up questions, and hours later a complete product project is sitting on your machine: a PRD, an API contract, runnable code, a test report — plus a war room recording how six agents worked together. Fair warning: it is markedly slower than doing it yourself — see "An honest look" at the end for the itemized bill.
 
@@ -21,12 +21,12 @@ Not a prompt pack — an installable **collaboration dev framework** in four lay
 - **A gate at every stage** — PASS / CONCERN / FAIL; CONCERN items must be logged;
 - **Two research-backed mechanisms** — the **star advisor pattern** (read-only advisors challenge a draft for one round) and **dynamic staffing L0–L2** (simple tasks get one agent, so the ~15× token cost of multi-agent — measured on research tasks — never burns on work that doesn't need it).
 
-The framework is platform-decoupled: swap the host tool, swap the adapter — not the framework. The ZCode edition is shipped; the OpenCode edition reuses the same contracts and stage definitions verbatim.
+The framework is platform-decoupled: swap the host tool, swap the adapter — not the framework. All four editions are shipped in this repo (see docs/VERSIONS.md).
 
 ## Quick start
 
 ```bash
-# 1. Install (ZCode — one of the first two implementations)
+# 1. Install (ZCode edition — one of the four implementations)
 bash install.sh        # Windows PowerShell: .\install.ps1
 
 # 2. In a ZCode session, say any wake phrase:
@@ -141,7 +141,7 @@ The framework has been validated through multiple real development runs (control
 
 ## Roadmap
 
-> Changelog: v4.0 (ZCode edition, one of the first two implementations, this repo) shipped.
+> Changelog: v4.1 — universal/ + opencode/ + workbuddy/ editions added; runtime consolidated.
 
 - [ ] OpenCode edition (the second; shared contracts & stage definitions)
 - [ ] Platform-neutral protocol + adapter layer

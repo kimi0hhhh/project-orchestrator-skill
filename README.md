@@ -2,9 +2,9 @@
 
 ![Project Orchestrator 框架横幅](docs/assets/banner.svg)
 
-![version](https://img.shields.io/badge/version-v4.1-green) ![stage](https://img.shields.io/badge/status-beta-blue) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white) ![platform](https://img.shields.io/badge/platform-ZCode%20%7C%20OpenCode-orange) ![license](https://img.shields.io/badge/license-MIT-red) ![evidence](https://img.shields.io/badge/dev_validated-2%20real%20products-8A2BE2)
+![version](https://img.shields.io/badge/version-v4.1-green) ![stage](https://img.shields.io/badge/status-beta-blue) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white) ![platform](https://img.shields.io/badge/platform-ZCode%20%7C%20OpenCode%20%7C%20WorkBuddy%20%7C%20Universal-orange) ![license](https://img.shields.io/badge/license-MIT-red) ![evidence](https://img.shields.io/badge/dev_validated-2%20real%20products-8A2BE2)
 
-**一句话**：一套可安装的**多智能体交付框架**——「项目负责人 + 6 单责角色 + 按需参谋 + 阶段门禁」的编排协议，配 S0–S7 标准交付流程、实时可视化作战看板、全程可追溯的 token/事件账本。主 Agent 不下场干活，只做派发、验收、放行；单写手、单层编排、只读参谋、门禁不放水。它不绑定某个工具，而是面向任何具备子 agent 派发能力的 agent 开发工具；**ZCode 与 OpenCode 是前两个先行实现**（本仓库先发布 ZCode 版）。交付以门禁验收为准，不承诺一次成型。
+**一句话**：一套可安装的**多智能体交付框架**——「项目负责人 + 6 单责角色 + 按需参谋 + 阶段门禁」的编排协议，配 S0–S7 标准交付流程、实时可视化作战看板、全程可追溯的 token/事件账本。主 Agent 不下场干活，只做派发、验收、放行；单写手、单层编排、只读参谋、门禁不放水。它不绑定某个工具，而是面向任何具备子 agent 派发能力的 agent 开发工具；**已落地四个实现**：ZCode / OpenCode / WorkBuddy / 通用版 universal（差异对照见 docs/VERSIONS.md）。交付以门禁验收为准，不承诺一次成型。
 
 > 把需求说清楚、回答几个简短的追问，几小时后回来，一个完整的产品项目已经躺在电脑里：PRD、接口契约、可运行代码、测试报告，还有一间记录六个 agent 如何协作的作战室。当然，它比你亲自下场显著更慢——文末「诚实地说说优缺点」有一笔一笔的账。
 
@@ -36,7 +36,7 @@
 
 | 实现 | 版本 | 一句话 |
 |---|---|---|
-| ZCode 版（本仓库根目录） | v4.1 | 先行实现，协议最完整参考，开箱即装 |
+| ZCode 版（本仓库根目录） | v4.1 | 协议最完整参考，开箱即装 |
 | [universal/](universal/README.md) 通用版 | v4.1 | 平台无关母版：8 项原语映射 + A/B/C 三档适配 + 自举移植提示词 |
 | [opencode/](opencode/README.md) OpenCode 版 | v4.1 | task 工具体系 + 5 个斜杠命令，14 条机制移植 |
 | [workbuddy/](workbuddy/README.md) WorkBuddy 版 | v4.2 | 深度适配：原生 teams/tasks/台账优先，自建仅剩看板/门禁/契约 |
@@ -44,7 +44,7 @@
 ## 快速开始
 
 ```bash
-# 1. 安装（ZCode，先行实现之一）
+# 1. 安装（ZCode 版，四个实现之一）
 bash install.sh        # Windows PowerShell: .\install.ps1
 
 # 2. 在 ZCode 会话里说任意一句唤醒语：
@@ -169,7 +169,8 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 > Changelog：v4.0（ZCode 版开源）已发布；v4.1（关键路径重叠、变更分诊、runtime 收编、通用版）已发布。
 
 - [x] **通用版**（`universal/`，平台无关协议 + 三档能力适配 + 自举移植提示词）——任何 agent 工具的开发者按 [universal/PORTING.md](universal/PORTING.md) 移植，30–60 分钟完成
-- [ ] OpenCode 版（前两个先行实现之二，契约模板与阶段定义同源复用）
+- [x] OpenCode 版 v4.1（`opencode/`，14 条机制移植，已入库）
+- [x] WorkBuddy 版 v4.2（`workbuddy/`，深度适配：原生 teams/tasks/台账优先）
 - [ ] 看门狗证据链加固（pid 登记 / 文件活动兜底 / stalled 宽限，ZCode 实测 17 次误报待修）
 
 详见 [docs/ROADMAP.md](docs/ROADMAP.md)。

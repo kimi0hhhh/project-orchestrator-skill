@@ -1,6 +1,6 @@
 # Project Orchestrator · 多 Agent 协作开发框架
 
-> 版本 `4.2` · 目标宿主 **WorkBuddy** · 上游协议源 [kimi0hhhh/project-orchestrator-skill](https://github.com/kimi0hhhh/project-orchestrator-skill) tag `v4.1`（ZCode 版先行实现）
+> 版本 `4.2` · 目标宿主 **WorkBuddy** · 上游协议源 [kimi0hhhh/project-orchestrator-skill](https://github.com/kimi0hhhh/project-orchestrator-skill) tag `v4.1`（协议母版见 universal/，ZCode 版为先行实现）
 >
 > v4.2 是**针对 WorkBuddy 的深度适配层**，不是上游版本的复刻：凡 WorkBuddy 原生已有的能力
 > 一律下沉复用，自建只保留原生没有的部分（阶段状态机 / 门禁 / 变更分诊 / 参谋机制 / 角色契约）。
