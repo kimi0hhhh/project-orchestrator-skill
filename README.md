@@ -53,7 +53,7 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 # 4. 填 docs/PROJECT_BRIEF.md（产品输入书），放手让它跑
 ```
 
-详细用法：**[docs/USAGE.md](docs/USAGE.md)**（docs 目前仅中文）
+详细用法：**[docs/USAGE.md](docs/USAGE.md)** · 分平台安装：**[docs/INSTALL.md](docs/INSTALL.md)** · 四实现的包都在 [Releases](https://github.com/kimi0hhhh/project-orchestrator-skill/releases) 可直接下载
 
 ## 流水线与拓扑
 
