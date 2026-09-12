@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>多 Agent 协作运行时</title>
+<style>
+:root{
+  --bg:#F7F7F5; --panel:#FFFFFF; --line:#E3E1DA; --line2:#EFEDE7;
+  --tx:#2C2C2A; --tx2:#5F5E5A; --tx3:#8B8A82;
+  --green:#1D9E75; --amber:#BA7517; --blue:#185FA5; --red:#A32D2D; --gray:#888780;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);
+  font:13px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  height:100vh;display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+/* 顶栏 */
+header{height:56px;flex:0 0 56px;background:var(--panel);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:16px;padding:0 16px}
+.brand{font-size:14px;font-weight:500;white-space:nowrap}
+.brand small{display:block;font-size:11px;color:var(--tx3);font-weight:400}
+.pipe{display:flex;gap:4px;align-items:center;flex:1;overflow-x:auto}
+.ph{padding:3px 9px;border-radius:11px;font-size:11px;color:var(--tx3);
+  background:var(--line2);white-space:nowrap;border:1px solid transparent}
+.ph.on{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4;font-weight:500}
+.ph.done{color:var(--green);background:#E1F5EE}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--tx3);display:inline-block;margin-right:4px}
+.hstat{display:flex;gap:14px;font-size:11px;color:var(--tx2);white-space:nowrap}
+.hstat b{font-weight:500;color:var(--tx)}
+.live{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+.live.off{background:var(--gray)}
+
+/* 主体 */
+main{flex:1;display:grid;grid-template-columns:150px 306px 1fr 312px;gap:12px;
+  padding:12px;min-height:0}
+@media (max-width:1400px){
+  main{grid-template-columns:132px 272px 1fr 268px}
+}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ch{padding:11px 13px;border-bottom:1px solid var(--line2);display:flex;
+  align-items:center;justify-content:space-between;flex:0 0 auto}
+.ch h2{font-size:13px;font-weight:500}
+.ch span{font-size:11px;color:var(--tx3)}
+.cb{flex:1;overflow-y:auto;overflow-x:hidden}
+.cb::-webkit-scrollbar{width:8px}
+.cb::-webkit-scrollbar-thumb{background:#DDDBD3;border-radius:4px}
+
+/* agent 卡片 */
+.ag{padding:11px 13px;border-bottom:1px solid var(--line2);cursor:pointer}
+.ag:hover{background:#FAFAF8}
+.ag.sel{background:#F0F4FA}
+.ag-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.av{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:500;color:#fff;flex:0 0 26px}
+.ag-nm{flex:1;min-width:0}
+.ag-nm b{font-size:12.5px;font-weight:500;display:block}
+.ag-nm i{font-style:normal;font-size:10.5px;color:var(--tx3);
+  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st{font-size:10px;padding:1.5px 6px;border-radius:8px;white-space:nowrap}
+.st.idle{background:#F1EFE8;color:#5F5E5A}
+.st.working{background:#E1F5EE;color:#0F6E56}
+.st.blocked{background:#FAEEDA;color:#854F0B}
+.st.done{background:#E6F1FB;color:#0C447C}
+.st.interrupted{background:#FCEBEB;color:#A32D2D;font-weight:500}
+.st.pending_resume{background:#FAEEDA;color:#854F0B}
+.st.resuming{background:#E1F5EE;color:#0F6E56}
+.ag.int{background:#FEF6F6;border-color:#F7C1C1}
+.ag.warn{background:#FFFBF0}
+.ag-int{margin-top:6px;padding:6px 8px;border-radius:7px;background:#FCEBEB;
+  border:1px solid #F7C1C1;font-size:10.5px;color:#A32D2D;line-height:1.5}
+.ag-int b{display:block;margin-bottom:2px;font-weight:500}
+.ag-int .row{display:flex;gap:6px;align-items:center;margin-top:6px}
+.resbtn{font-size:10.5px;padding:3px 10px;border-radius:7px;border:1px solid #A32D2D;
+  background:#fff;color:#A32D2D;cursor:pointer;font-family:inherit}
+.resbtn:hover{background:#A32D2D;color:#fff}
+.resbtn[disabled]{opacity:.5;cursor:default}
+.silen{font-size:9.5px;padding:0 5px;border-radius:6px;background:#FAEEDA;color:#854F0B;
+  margin-left:4px}
+.compose{border-top:1px solid var(--line);padding:9px 12px 10px;background:#FFFDF9}
+.cp-top{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.cp-lb{font-size:10.5px;color:var(--tx3);flex:0 0 auto}
+.cp-top select{font-size:11.5px;padding:3px 6px;border:1px solid var(--line);
+  border-radius:7px;font-family:inherit;background:#fff;color:var(--tx)}
+.cp-hint{font-size:10px;color:var(--tx3)}
+.cp-top .cp-hint{margin-left:auto}
+.compose textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:64px;
+  font-size:12px;line-height:1.55;padding:8px 10px;border:1px solid var(--line);
+  border-radius:9px;font-family:inherit;background:#fff;color:var(--tx);outline:none}
+.compose textarea:focus{border-color:#BA7517;box-shadow:0 0 0 2px rgba(186,117,23,.13)}
+.cp-bot{display:flex;align-items:center;gap:8px;margin-top:7px}
+.cp-bot .cp-hint{flex:1}
+.msg.user{background:#FFFBF0;border:1px solid #FAC775;border-radius:9px;
+  padding:7px 10px;margin:5px 9px}
+.msg.user .mb .mh b{color:#854F0B}
+.msg.user .mbody{color:var(--tx)}
+.pl-ov{display:flex;align-items:baseline;gap:7px;margin-bottom:2px}
+.pl-ov b{font-size:21px;font-weight:500;color:#3C3489;
+  font-family:ui-monospace,Consolas,monospace}
+.pl-ov span{font-size:10.5px;color:var(--tx3)}
+.planbar{height:8px;border-radius:5px;background:#EFEDE6;overflow:hidden;margin:6px 0 9px}
+.planbar i{display:block;height:100%;background:#534AB7}
+.pl-row{display:flex;gap:7px;align-items:baseline;padding:4px 0;
+  border-bottom:1px dashed var(--line2);font-size:11px}
+.pl-row .pid2{flex:0 0 32px;font-family:ui-monospace,Consolas,monospace;
+  color:var(--tx3);font-size:10.5px}
+.pl-row .pnm{flex:1 1 auto;color:var(--tx);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.pl-row .pst{flex:0 0 46px;font-size:10px;text-align:center;border-radius:6px;padding:1px 0}
+.pst.done{background:#E1F5EE;color:#0F6E56}
+.pst.working{background:#FAEEDA;color:#854F0B}
+.pst.pending{background:#F1EFE8;color:#8B8A82}
+.pst.blocked{background:#FCEBEB;color:#A32D2D}
+.pl-row .pw{flex:0 0 30px;text-align:right;color:var(--tx3);font-size:10px;
+  font-family:ui-monospace,Consolas,monospace}
+.pl-note{font-size:10px;color:var(--tx3);padding:0 0 6px 39px;line-height:1.5}
+.milestone{font-size:10.5px;color:var(--tx2);padding:3px 0;line-height:1.5}
+.milestone u{text-decoration:none;color:var(--tx3);
+  font-family:ui-monospace,Consolas,monospace;font-size:10px;margin-right:5px}
+.resq{margin:0 0 8px;padding:7px 9px;border-radius:8px;background:#FAEEDA;
+  border:1px solid #FAC775;font-size:10.5px;color:#854F0B;line-height:1.5}
+.resq b{font-weight:500}
+.bar{height:4px;background:#EDEBE4;border-radius:2px;overflow:hidden;margin:5px 0 4px}
+.bar i{display:block;height:100%;border-radius:2px;transition:width .4s ease}
+.ag-step{font-size:11px;color:var(--tx2);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;min-height:17px}
+.ag-meta{font-size:10px;color:var(--tx3);margin-top:3px;font-family:ui-monospace,Consolas,monospace}
+
+/* 主 Agent 指挥台：项目负责人的面板，回答"整个项目到哪一步了" */
+.cmd{flex:0 0 auto;padding:11px 13px 12px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#F6F5FC 0%,#FFFFFF 100%)}
+.cmd-h{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.cmd-h .av{background:#534AB7}
+.cmd-h .cn{flex:1;min-width:0}
+.cmd-h b{font-size:12.5px;font-weight:500;display:block}
+.cmd-h i{font-style:normal;font-size:10px;color:var(--tx3);display:block;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmd-h button{flex:0 0 auto;font-size:11px;padding:3px 9px;border-radius:7px;
+  border:1px solid #CECBF6;background:#fff;color:#3C3489;cursor:pointer;font-family:inherit}
+.cmd-h button:hover{background:#EEEDFE}
+.cmd-ov{display:flex;align-items:baseline;gap:7px}
+.cmd-ov b{font-size:25px;font-weight:500;color:#3C3489;line-height:1.1;
+  font-family:ui-monospace,Consolas,monospace}
+.cmd-ov span{font-size:10.5px;color:var(--tx3)}
+.cmd-ov u{text-decoration:none;margin-left:auto;font-size:9.5px;color:var(--tx3)}
+.cmd-row{font-size:11px;color:var(--tx2);margin-top:6px;display:flex;gap:6px;align-items:baseline}
+.cmd-row b{font-weight:500;color:var(--tx);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;max-width:150px}
+.cmd-row em{font-style:normal;margin-left:auto;color:var(--tx3);font-size:10px;flex:0 0 auto;
+  font-family:ui-monospace,Consolas,monospace}
+.cmd-kpi{display:flex;gap:6px;margin-top:9px}
+.kpi{flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:5px 4px;text-align:center}
+.kpi b{display:block;font-size:14px;font-weight:500;line-height:1.25;
+  font-family:ui-monospace,Consolas,monospace}
+.kpi span{font-size:9.5px;color:var(--tx3)}
+.kpi.urg{border-color:#F7C1C1;background:#FEF6F6}
+.kpi.urg b{color:#A32D2D}
+.kpi.blk{border-color:#FAC775;background:#FFFCF3}
+.kpi.blk b{color:#854F0B}
+
+/* 待处理用户指令：用户的话是待办，不是聊天记录，必须置顶 */
+/* v3.7：已处理的留言降级为普通消息（去红、去加急强调、淡显），不再冒充待办 */
+.msg.user.done{opacity:.75;background:transparent;border-color:var(--line)}
+.pend{flex:0 0 auto;max-height:224px;overflow-y:auto;border-bottom:1px solid var(--line);
+  background:#FFFCF3;padding:8px 11px}
+.pend::-webkit-scrollbar{width:7px}
+.pend::-webkit-scrollbar-thumb{background:#EFE3C8;border-radius:4px}
+.pend-h{font-size:10.5px;color:#854F0B;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.pend-h u{text-decoration:none;margin-left:auto;color:var(--tx3);font-size:10px}
+.pn{border:1px solid #FAC775;border-radius:8px;background:#fff;padding:6px 9px;margin-bottom:5px}
+.pn.urg{border-color:#F09595;background:#FEF6F6}
+.pn-t{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--tx3);margin-bottom:3px}
+.ug{background:#A32D2D;color:#fff;border-radius:6px;padding:0 6px;font-size:9.5px;
+  flex:0 0 auto;font-weight:500}
+.pn-t button{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:6px;
+  border:1px solid var(--line);background:#fff;color:var(--tx2);cursor:pointer;font-family:inherit}
+.pn-t button:hover{background:#E1F5EE;border-color:#9FE0CB;color:#0F6E56}
+.pn-b{font-size:11.5px;color:var(--tx);white-space:pre-wrap;line-height:1.55;
+  max-height:56px;overflow:hidden}
+.pn-ack-tag{font-size:9.5px;color:var(--green);border:1px solid #9FE0CB;background:#E1F5EE;
+  border-radius:6px;padding:0 5px;margin-left:5px}
+
+/* 沟通区：放大 + 加急 + 快捷短语 */
+.compose textarea{min-height:134px}
+.compose.big textarea{height:46vh}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.chip{font-size:10.5px;padding:2.5px 9px;border-radius:9px;border:1px solid var(--line);
+  background:#fff;color:var(--tx2);cursor:pointer;font-family:inherit}
+.chip:hover{border-color:#B5D4F4;background:#F0F4FA;color:var(--blue)}
+.urg-sw{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tx2);
+  cursor:pointer;white-space:nowrap}
+.urg-sw input{margin:0;cursor:pointer}
+.urg-sw.on{color:#A32D2D;font-weight:500}
+.cp-bot .btn{padding:6px 16px}
+.cp-x{font-size:10.5px;color:var(--tx3);cursor:pointer}
+.cp-x:hover{color:var(--blue)}
+
+/* 完整规划（作战地图）弹窗 */
+.mbox.wide{width:min(1120px,100%)}
+.pm-h{padding:14px 18px 12px;border-bottom:1px solid var(--line2)}
+.pm-h b{font-size:14px;font-weight:500;display:block}
+.pm-h i{font-style:normal;font-size:11.5px;color:var(--tx2);display:block;margin-top:4px;line-height:1.65}
+.pm-blk{margin-top:9px;font-size:11.5px;color:#854F0B;background:#FFFCF3;
+  border:1px solid #FAC775;border-radius:8px;padding:6px 9px;line-height:1.6}
+.pm-ov{display:flex;align-items:baseline;gap:9px;margin:10px 0 4px}
+.pm-ov b{font-size:26px;font-weight:500;color:#3C3489;font-family:ui-monospace,Consolas,monospace}
+.pm-ov span{font-size:11px;color:var(--tx3)}
+table.pm{width:100%;border-collapse:collapse;font-size:11.5px}
+table.pm th{text-align:left;font-size:10.5px;color:var(--tx3);font-weight:500;
+  padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.pm td{padding:8px;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.6}
+table.pm tr.cur td{background:#F6F5FC}
+table.pm td.nm{font-weight:500;color:var(--tx)}
+table.pm td.no{color:var(--tx2);min-width:210px}
+table.pm td.dl{color:var(--tx2);font-size:11px}
+
+/* 消息流 */
+/* 交互过程视图行样式 */
+/* 回传信号排版：机器式 [标签] 折叠成可读块 */
+.sig{margin-top:3px;border-left:2px solid var(--line);padding-left:8px}
+.sig-r{display:flex;gap:6px;line-height:1.6;font-size:11.5px}
+.sig-k{flex:0 0 56px;color:var(--tx3);background:rgba(127,127,127,.10);
+  border-radius:6px;text-align:center;height:16px;line-height:16px;margin-top:2px;font-size:10.5px}
+.sig-v{flex:1;min-width:0;word-break:break-word}
+.sig-lead{line-height:1.6;font-weight:600;font-size:12.5px;
+  background:rgba(127,127,127,.08);border-radius:6px;padding:4px 7px;margin-bottom:4px}
+/* 交互过程聊天式样式（v3.8） */
+/* v3.9：任务卡分组——按阶段分节，节内按角色聚合，看门狗误报折叠 */
+.ivwrap{display:flex;flex-direction:column}
+.isec{margin:12px 0 16px}
+.isec-h{display:flex;align-items:baseline;gap:8px;padding:5px 10px;margin-bottom:8px;
+  background:linear-gradient(90deg,rgba(127,127,127,.10),transparent);
+  border-left:3px solid var(--tx2,#555);border-radius:3px}
+.isec-h b{font-size:12.5px}
+.isec-h u{text-decoration:none;margin-left:auto;font-size:10.5px;color:var(--tx3)}
+/* v3.11 交接叙事句：左=发起角色，中=做了/完成/交付，右=接收角色（inline 流，断行不断链） */
+.hlink{display:block;padding:4px 9px;margin:5px 0 3px;
+  background:linear-gradient(90deg,rgba(24,95,165,.07),transparent);
+  border-left:3px solid var(--blue);border-radius:3px;font-size:11.5px;line-height:1.7}
+.hl-from{font-weight:700;color:var(--blue);margin-right:8px}
+.hl-act{color:var(--tx2)}
+.hl-act b{color:var(--tx);font-weight:600}
+.hl-give{white-space:nowrap}
+.hl-to{font-weight:700;color:var(--blue)}
+.hl-arr{color:var(--blue);font-style:normal;font-size:10px}
+/* 进行中卡：琥珀色（类名用 going，勿用 live——顶栏状态点 .live 已占用，撞名会 width:7px 竖排） */
+.hlink.going{border-left-color:var(--amber);background:linear-gradient(90deg,rgba(186,117,23,.08),transparent)}
+.hlink.going .hl-from,.hlink.going .hl-to{color:var(--amber)}
+.hlink.going .hl-arr{color:var(--amber)}
+/* 主 Agent 段卡：右缩进贴在对应 agent 卡下方，形成「给谁→谁紧跟」呼应 */
+.orch-seg{margin-left:16px}
+.tcard{border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:8px;
+  background:rgba(255,255,255,.6)}
+.tcard-h{display:flex;align-items:center;gap:7px}
+.tcard-h b{font-size:12px}
+.tcard-h .av{width:20px;height:20px;border-radius:5px;font-size:10.5px;color:#fff;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.tk-st{font-size:10.5px;color:var(--tx3)}
+.tspan{margin-left:auto;font-size:10px;color:var(--tx3);font-family:ui-monospace,Consolas,monospace}
+.tcard-sum{font-size:11px;color:var(--tx2);margin:4px 0 2px}
+.tcard-arts{margin:3px 0 2px;display:flex;flex-wrap:wrap;gap:5px}
+.art-chip{font-size:10.5px;background:rgba(127,127,127,.10);border:1px solid var(--line);
+  border-radius:9px;padding:1px 8px;cursor:pointer}
+.tcard details{margin-top:4px}
+.tcard details summary{font-size:10.5px;color:var(--tx3);cursor:pointer;user-select:none}
+.mline{font-size:11px;line-height:1.6;padding:1px 0;border-bottom:1px dashed var(--line);
+  display:flex;gap:6px;align-items:baseline}
+.mline u{text-decoration:none;color:var(--tx3);font-family:ui-monospace,Consolas,monospace;flex:0 0 52px}
+.mline .evk{flex:0 0 34px;text-align:center}
+.tcard.sys{background:transparent;border-style:dashed}
+.iarow{padding:6px 10px;border-bottom:1px dashed var(--line);font-size:12px}
+.iah{display:flex;gap:6px;align-items:baseline}
+.iah b{font-size:12px}
+.ialab{color:var(--tx3);font-size:10.5px}
+.iats{margin-left:auto;font-size:10px;color:var(--tx3)}
+.iatx{margin-top:2px;line-height:1.55;word-break:break-word;color:var(--tx2)}
+.msg{padding:9px 13px;display:flex;gap:9px}
+.msg:hover{background:#FAFAF8}
+.msg-me{flex-direction:row-reverse}
+.mb{flex:1;min-width:0}
+.mh{display:flex;align-items:baseline;gap:7px;margin-bottom:2px}
+.mh b{font-size:12px;font-weight:500}
+.mh span{font-size:10.5px;color:var(--tx3)}
+.to{font-size:10.5px;color:var(--tx3);margin-left:auto;white-space:nowrap}
+.mbody{font-size:12.5px;color:var(--tx);word-break:break-word;white-space:pre-wrap}
+.mbody em{font-style:normal;color:var(--blue);background:#E6F1FB;
+  padding:0 3px;border-radius:3px}
+.sys{padding:5px 13px;font-size:11px;color:var(--tx3);text-align:center;
+  border-bottom:1px solid var(--line2)}
+.ev{padding:3px 13px;font-size:11px;color:var(--tx3);display:flex;gap:7px;align-items:baseline}
+.ev:hover{background:#FAFAF8}
+.ev b{font-weight:500;color:var(--tx2);flex:0 0 46px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.evk{font-size:9.5px;padding:0 5px;border-radius:6px;background:#F1EFE8;
+  color:var(--tx2);flex:0 0 auto}
+.evk.spawn{background:#E1F5EE;color:#0F6E56}
+.evk.finish{background:#E6F1FB;color:#0C447C}
+.evk.blocked{background:#FAEEDA;color:#854F0B}
+.evk.memory{background:#EEEDFE;color:#3C3489}
+.evk.interrupt{background:#FCEBEB;color:#A32D2D}
+.evk.resume{background:#E1F5EE;color:#0F6E56}
+.evk.resume_request{background:#FAEEDA;color:#854F0B}
+.evk.heartbeat{background:#F1EFE8;color:#5F5E5A}
+.evt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.art{margin-top:5px;display:inline-flex;align-items:center;gap:6px;padding:4px 9px;
+  background:#F7F7F5;border:1px solid var(--line);border-radius:7px;
+  font-size:11px;color:var(--tx2);cursor:pointer;max-width:100%}
+.art:hover{border-color:#B5D4F4;background:#F0F4FA}
+.art b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 右栏 */
+.sec{padding:11px 13px;border-bottom:1px solid var(--line2)}
+.sec h3{font-size:11px;font-weight:500;color:var(--tx3);
+  text-transform:none;margin-bottom:7px;letter-spacing:.02em}
+.tk{margin-bottom:9px}
+.tk-t{display:flex;justify-content:space-between;gap:8px;font-size:11.5px}
+.tk-t b{font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-t i{font-style:normal;color:var(--tx3);font-size:10.5px;white-space:nowrap}
+.heat{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px}
+.heat i{font-style:normal;width:44px;color:var(--tx2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.heat div{flex:1;height:5px;background:#EDEBE4;border-radius:3px;overflow:hidden}
+.heat div span{display:block;height:100%;border-radius:3px}
+.heat u{text-decoration:none;color:var(--tx3);font-size:10px;width:20px;text-align:right}
+.file{padding:4px 13px;font-size:11px;color:var(--tx2);cursor:pointer;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file:hover{background:#F0F4FA}
+.file em{font-style:normal;color:var(--tx3);font-size:10px;margin-left:5px}
+.empty{padding:26px 13px;text-align:center;color:var(--tx3);font-size:11.5px}
+.pill{font-size:10px;padding:1px 6px;border-radius:7px;background:#F1EFE8;color:var(--tx2)}
+/* ---- 项目概要 · 运行时（v4.2：对齐 OpenCode 版的「项目概要区」，版本标识改 WorkBuddy 版）----
+   刻意只用本版已有的 CSS 变量（--tx / --tx3 / --blue / --line2），不引入 --fs-xs、
+   --blue-tx 之类上游变量 —— 否则样式会静默失效（变量未定义 → 回退成黑色）。 */
+.ov{display:flex;flex-direction:column;gap:6px}
+.ovrow{display:flex;gap:10px;align-items:baseline;font-size:11px;line-height:1.5}
+.ovk{flex:0 0 68px;color:var(--tx3)}
+.ovv{flex:1;color:var(--tx);word-break:break-word}
+.ovv i{display:block;color:var(--tx3);font-style:normal;font-size:10px;margin-top:1px}
+.ovv b.ov-wb{color:var(--blue)}
+
+/* 项目侧边栏 */
+.pitem{padding:8px 10px;border-radius:9px;cursor:pointer;margin-bottom:3px;
+  border:1px solid transparent}
+.pitem:hover{background:#FAFAF8}
+.pitem.on{background:#F0F4FA;border-color:#B5D4F4}
+.pitem .pt{display:flex;align-items:center;gap:6px}
+.pitem .pt b{font-size:12.5px;font-weight:500;flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.pitem .del{opacity:.45;font-size:10.5px;color:var(--tx3);flex:0 0 auto}
+.pitem:hover .del{opacity:1}
+.pitem .del:hover{color:var(--red)}
+.pitem i{font-style:normal;font-size:10.5px;color:var(--tx3);display:flex;
+  justify-content:space-between;gap:6px;margin-top:2px}
+.pdot{width:6px;height:6px;border-radius:50%;display:inline-block;background:var(--green)}
+.padd{padding:9px 10px;border-top:1px solid var(--line2)}
+.padd input{width:100%;margin-bottom:6px}
+.iconbtn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;border:1px solid var(--line);color:var(--tx2);flex:0 0 28px}
+.iconbtn:hover{background:#F0F4FA;border-color:#B5D4F4;color:var(--blue)}
+.iconbtn.sm{width:22px;height:22px;flex:0 0 22px;font-size:14px;line-height:1}
+
+/* 设置面板 */
+.sbox{background:#fff;border-radius:12px;width:min(640px,100%);max-height:100%;
+  display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.tabs{display:flex;gap:2px;padding:11px 15px 0;border-bottom:1px solid var(--line2)}
+.tab{padding:6px 13px;font-size:12.5px;color:var(--tx2);border-radius:7px 7px 0 0}
+.tab.on{background:#F0F4FA;color:var(--blue);font-weight:500}
+.sbody{flex:1;overflow-y:auto;padding:15px}
+.prow{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--line);
+  border-radius:9px;margin-bottom:7px}
+.prow.on{border-color:#B5D4F4;background:#F0F4FA}
+.prow .pn{flex:1;min-width:0}
+.prow .pn b{font-size:12.5px;font-weight:500;display:block}
+.prow .pn i{font-style:normal;font-size:10.5px;color:var(--tx3)}
+.mrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line2)}
+.mrow .mn{flex:1;min-width:0}
+.mrow .mn b{font-size:12.5px;font-weight:400;display:block}
+.mrow .mn i{font-style:normal;font-size:10.5px;color:var(--tx3)}
+.mrow2{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line2)}
+.mcfg{flex:1;min-width:0}
+.mcfg .r1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mcfg .r1 b{font-size:12.5px;font-weight:500}
+.mcfg .r2{display:flex;gap:6px;margin:6px 0 3px}
+.mcfg .r2 input{font-size:11.5px;padding:3px 7px}
+.mcfg .r2 select{font-size:11.5px;padding:3px 6px}
+.mcfg i{font-style:normal;font-size:10.5px;color:var(--tx3)}
+select{font:inherit;font-size:12px;padding:4px 8px;border:1px solid var(--line);
+  border-radius:7px;background:#fff;color:var(--tx);cursor:pointer}
+select:hover{border-color:#B5D4F4}
+input{font:inherit;font-size:12px;padding:5px 9px;border:1px solid var(--line);
+  border-radius:7px;background:#fff;color:var(--tx);min-width:0}
+input:focus{outline:none;border-color:#B5D4F4}
+.btn{padding:5px 12px;border-radius:7px;font-size:12px;border:1px solid var(--line);
+  background:#fff;color:var(--tx)}
+.btn:hover{background:#F0F4FA;border-color:#B5D4F4}
+.btn.pri{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn.pri:hover{background:#0C447C}
+.btn.danger{color:var(--red)}
+.btn.danger:hover{background:#FCEBEB;border-color:#F09595}
+.formrow{display:flex;gap:7px;margin-bottom:10px;align-items:center}
+.formrow label{font-size:11.5px;color:var(--tx2);flex:0 0 46px}
+.hint{font-size:11px;color:var(--tx3);line-height:1.7;margin-top:10px}
+
+/* 弹层 */
+.modal{position:absolute;inset:0;background:rgba(30,30,28,.32);
+  display:none;align-items:center;justify-content:center;padding:36px;z-index:50}
+.modal.on{display:flex}
+.mbox{background:#fff;border-radius:12px;width:min(880px,100%);max-height:100%;
+  display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.mbox pre{flex:1;overflow:auto;padding:15px;font:11.5px/1.65 ui-monospace,Consolas,monospace;
+  white-space:pre-wrap;word-break:break-word}
+.mh2{padding:11px 15px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+/* 设置保存回执（v3.6）：让「改完就生效」看得见 */
+.settoast{max-height:0;overflow:hidden;transition:max-height .2s;font-size:11.5px;
+  color:#0F6E4A;background:#EAF7F1;padding:0 15px}
+.settoast.on{max-height:34px;padding:8px 15px;border-bottom:1px solid #C7E8D8}
+.mfoot{padding:8px 15px;border-top:1px solid var(--line2);font-size:11px;
+  color:var(--tx3);min-height:14px;word-break:break-all}
+.mfoot .btn{font-size:11px;padding:2px 10px}
+
+/* Token 消耗汇总区块（07 §3 四态）；v3.2 常驻「整体规划与任务」列，取代发言热度 */
+.tk-sub{font-size:10.5px;color:var(--tx3);padding:6px 13px 0;border-top:1px dashed var(--line)}
+.hbar .hb-vl{flex:0 0 26px;text-align:right;font-size:11px;color:var(--tx2)}
+.ag-meta .mdl{display:inline-block;background:rgba(127,127,127,.14);
+  padding:0 6px;border-radius:8px;font-weight:600;color:var(--tx,#444)}
+.tokblk{flex:0 0 auto;max-height:216px;display:flex;flex-direction:column;
+  border-top:1px solid var(--line);background:#FCFCFA}
+.tok-h{padding:8px 13px 4px;display:flex;align-items:baseline;gap:8px;flex:0 0 auto}
+.tok-h h3{font-size:11px;font-weight:500;color:var(--tx3);letter-spacing:.02em}
+.tok-h span{font-size:10px;color:var(--tx3);margin-left:auto;
+  font-family:ui-monospace,Consolas,monospace}
+.tk-body{flex:1;overflow-y:auto;padding:2px 13px 10px;min-height:38px}
+.skel{height:11px;background:linear-gradient(90deg,#EDEBE4,#F6F5F1,#EDEBE4);
+  border-radius:3px;margin:5px 0}
+.tk-body::-webkit-scrollbar{width:7px}
+.tk-body::-webkit-scrollbar-thumb{background:#DDDBD3;border-radius:4px}
+.tok-sum{font-size:11px;color:var(--tx2);margin:2px 0 7px}
+.tok-sum b{font-weight:500;color:var(--tx);
+  font-family:ui-monospace,Consolas,monospace}
+.tok-empty{padding:12px 0;text-align:center;color:var(--tx3);font-size:11.5px}
+.tok-err{padding:10px 0;color:var(--red);font-size:11.5px;display:flex;
+  gap:10px;align-items:center;flex-wrap:wrap}
+.tok-err .btn{font-size:11px;padding:2px 10px}
+.tok-unpriced{color:#854F0B;background:#FAEEDA;border-radius:6px;
+  padding:0 5px;font-size:10px}
+.hbar{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:11px}
+.hb-nm{flex:0 0 58px;text-align:right;color:var(--tx2);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.hb-track{flex:1;height:12px;background:#EDEBE4;border-radius:3px;overflow:hidden}
+.hb-fill{display:block;height:100%;border-radius:3px;background:#7AA6A0;
+  transition:width .4s ease}
+.hbar.top1 .hb-fill{background:#185FA5}
+.hb-val{flex:0 0 128px;font-family:ui-monospace,Consolas,monospace;
+  color:var(--tx2);font-size:10px;text-align:right;white-space:nowrap}
+/* 角色卡片 token 行 */
+.ag-tok{font-size:10.5px;color:var(--tx2);margin-top:3px;
+  font-family:ui-monospace,Consolas,monospace}
+.ag-tok .tok-unpriced{font-family:system-ui,sans-serif}
+/* 任务卡片工件清单（节点工件面板，L2） */
+.tk{border-bottom:1px dashed var(--line2);padding-bottom:5px;margin-bottom:6px}
+.task-card .tk-t{cursor:default}
+.tarrow{display:inline-block;flex:0 0 auto;color:var(--tx3);font-size:10px;
+  cursor:pointer;background:none;border:none;padding:0 2px;
+  transition:transform .15s;font-family:inherit;line-height:1}
+.tarrow:hover{color:var(--blue)}
+.tarrow.open{transform:rotate(90deg)}
+.tk-arts{padding:4px 0 2px 16px}
+.art-row{display:flex;align-items:baseline;gap:7px;padding:3px 0;
+  border-top:1px dashed var(--line2);font-size:11px}
+.art-row:first-child{border-top:none}
+.art-link{color:var(--blue);cursor:pointer;text-decoration:underline;
+  word-break:break-all;background:none;border:none;padding:0;
+  font:inherit;text-align:left}
+.art-link:hover{color:#0C447C}
+.art-sum{color:var(--tx3);flex:1;min-width:40px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;font-size:10.5px}
+.art-empty{color:var(--tx3);font-size:10.5px;padding:4px 0}
+.art-note{color:var(--tx3);font-size:10px;padding:2px 0;line-height:1.5}
+.art-missing{color:var(--red)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">多 Agent 协作运行时<small>独立进程 · 独立上下文 · 独立记忆</small></div>
+  <div class="pipe" id="pipe"></div>
+  <div class="hstat">
+    <span><span class="live" id="liveDot"></span> 实时</span>
+    <span>在线 <b id="hdOnline">0</b>/<b id="hdTotal">0</b></span>
+    <span>消息 <b id="hdMsg">0</b></span>
+    <span id="hdPendWrap" style="display:none">待我处理 <b id="hdPend"
+      style="color:#A32D2D">0</b></span>
+    <span id="hdTime">--:--:--</span>
+  </div>
+  <button class="iconbtn" onclick="openSettings()" title="Agent 模型设置">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+</header>
+
+<div id="offline" style="display:none;background:#FCEBEB;color:#A32D2D;padding:7px 14px;
+  font-size:12px;border-bottom:1px solid #F7C1C1;flex:0 0 auto">
+  当前不是实时视图 —— 连不上运行时服务。请在浏览器打开
+  <b id="offlineAddr">http://127.0.0.1:8777</b> 才能看到实时的 agent 协作。
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var e = document.getElementById('offlineAddr');
+  if (e) { e.textContent = location.origin; }
+});
+</script>
+
+<main>
+  <aside class="col">
+    <div class="ch"><h2>项目</h2>
+      <button class="iconbtn sm" onclick="toggleNewProj()" title="新建项目">+</button>
+    </div>
+    <div class="cb" id="projList"></div>
+    <div class="padd" id="newProjBox" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11.5px;color:var(--tx2)">新建项目</span>
+        <button class="iconbtn sm" onclick="toggleNewProj()" title="关闭">×</button>
+      </div>
+      <input id="npId" placeholder="项目 ID，如 myapp">
+      <input id="npName" placeholder="名称（可选）">
+      <input id="npBrief" placeholder="Brief 路径（可选）">
+      <button class="btn pri" style="width:100%" onclick="createProject()">创建并切换</button>
+    </div>
+  </aside>
+
+  <section class="col">
+    <!-- 主 Agent 指挥台：项目负责人视角，一眼看到整个项目到什么地步了 -->
+    <div class="cmd" id="cmd"></div>
+    <div class="ch"><h2>子 agent 实例</h2><span id="agOnline">0 活跃</span></div>
+    <div id="resq" style="padding:8px 11px 0"></div>
+    <div class="cb" id="agents"></div>
+  </section>
+
+  <section class="col">
+    <div class="ch">
+      <h2>协作消息流</h2>
+      <span style="display:flex;gap:8px;align-items:center">
+        <button class="chip" id="feedModeBtn" onclick="toggleFeedMode()"
+                title="切换：消息流原始记录 / agent 交互对话视图">交互过程</button>
+        <button class="chip" id="feedOrderBtn" onclick="toggleFeedOrder()"
+                title="切换排序：最新在上（默认）/ 正序（从旧到新，读完整对话更顺）">正序↑</button>
+        <label style="cursor:pointer" title="只看正式消息（交付信号/会签意见/工件登记/留言），隐藏进度事件">
+          <input type="checkbox" id="onlyMsg" onchange="sig='';render()"> 仅消息</label>
+        <label style="cursor:pointer" title="最新消息排在最上面；开启后有新消息时自动回到顶部">
+          <input type="checkbox" id="autoScroll" checked> 自动置顶</label>
+      </span>
+    </div>
+    <!-- 用户指令置顶：主 Agent 唤醒后优先清这个队列 -->
+    <div class="pend" id="pend" style="display:none"></div>
+    <div class="cb" id="feed"></div>
+    <div class="compose" id="compose">
+      <div class="cp-top">
+        <span class="cp-lb">沟通给</span>
+        <select id="noteTo" title="收件人"></select>
+        <label class="urg-sw" id="urgSw"><input type="checkbox" id="noteUrg"> 加急</label>
+        <span class="cp-hint">主 Agent 每次唤醒先读你的留言</span>
+      </div>
+      <div class="chips">
+        <button class="chip" onclick="tpl('补充要求：')">补充要求</button>
+        <button class="chip" onclick="tpl('修正方向：')">修正方向</button>
+        <button class="chip" onclick="tpl('催进度：')">催进度</button>
+        <button class="chip" onclick="tpl('先停一下：')">先停一下</button>
+        <button class="chip" onclick="tpl('换个做法：')">换个做法</button>
+        <span class="cp-x" style="margin-left:auto;align-self:center"
+              onclick="toggleCompose()" id="cpX">放大</span>
+      </div>
+      <textarea id="noteBody" rows="6"
+        placeholder="在这里直接和主 Agent 沟通 —— 补充内容、修正方向、催办、改需求都行。&#10;例如：把绿徽章阈值改成 55%，并在界面标注校准日期。&#10;写长了没关系，这个框可以拖大、也可以点右上角「放大」。&#10;（Ctrl/⌘ + Enter 发送）"></textarea>
+      <div class="cp-bot">
+        <span class="cp-hint" id="noteCount">0 字</span>
+        <button class="btn pri" onclick="sendNote()">发送</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="col">
+    <div class="ch"><h2>整体规划与任务</h2><span id="tkCount">0</span></div>
+    <div class="cb">
+      <div class="sec">
+        <h3>项目概要 · 运行时</h3>
+        <div id="overview" class="ov"></div>
+      </div>
+      <div class="sec">
+        <h3>项目整体规划</h3>
+        <div id="plan"></div>
+      </div>
+      <div class="sec">
+        <h3>任务进度</h3>
+        <div id="tasks"></div>
+      </div>
+      <div class="sec">
+        <div class="tokblk" id="token-block" style="max-height:none;margin:0">
+          <div class="tok-h"><h3>Token 消耗（估算）</h3><span id="tokMeta"></span></div>
+          <div class="tk-body" id="tokBody"></div>
+          <div class="tk-sub">对话交互（每次汇报/发言/交付计 1）</div>
+          <div class="tk-body" id="roundBody"></div>
+        </div>
+      </div>
+      <div class="sec">
+        <h3>工件（docs/）</h3>
+        <div id="files"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal">
+  <div class="mbox">
+    <div class="mh2"><b id="mTitle">文件</b><button id="mClose">关闭</button></div>
+    <pre id="mBody"></pre>
+    <div class="mfoot" id="mFoot"></div>
+  </div>
+</div>
+
+<div class="modal" id="pmodal">
+  <div class="mbox wide">
+    <div class="mh2"><b>项目整体规划 · 主 Agent 作战地图</b><button id="pmClose">关闭</button></div>
+    <div style="flex:1;overflow-y:auto;padding:16px 18px" id="pmBody"></div>
+  </div>
+</div>
+
+<div class="modal" id="smodal">
+  <div class="sbox">
+    <div class="mh2"><b>Agent 模型配置</b><button id="sClose">关闭</button></div>
+    <div id="setToast" class="settoast"></div>
+    <div class="sbody" id="sbody"></div>
+    <datalist id="modelList"></datalist>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const S = {idle:'空闲', working:'工作中', blocked:'阻塞', done:'已完成',
+           interrupted:'⚠ 中断', pending_resume:'待恢复', resuming:'恢复中'};
+let state = null, sig = '', artifacts = [], filter = null;
+let curProj = null, settingsTab = 'projects';
+/* agent id 显示名（09 §8 枚举；未在 registry 的角色用 id 兜底） */
+const AG_NAMES = {orchestrator:'主 Agent', 'product-manager':'产品经理',
+  architect:'架构师', 'frontend-dev':'前端', 'backend-dev':'后端',
+  'dev-lead':'组长', qa:'QA'};
+
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function hi(s){return esc(s).replace(/@([a-zA-Z一-龥]+)/g,'<em>@$1</em>')}
+function kb(b){return b<1024?b+' B':(b/1024).toFixed(1)+' KB'}
+
+let failCount = 0;
+async function poll(){
+  try{
+    const r = await fetch('/api/state?limit=300' + (curProj ? '&project='+curProj : ''));
+    state = await r.json();
+    if(state.project) curProj = state.project;
+    render();
+    $('liveDot').className = 'live';
+    failCount = 0;
+    $('offline').style.display = 'none';
+  }catch(e){
+    $('liveDot').className = 'live off';
+    if(++failCount >= 2) $('offline').style.display = 'block';
+  }
+  try{
+    const r2 = await fetch('/api/artifacts');
+    artifacts = (await r2.json()).artifacts || [];
+    renderFiles();
+  }catch(e){}
+}
+
+function render(){
+  if(!state) return;
+  const s = JSON.stringify(state.agents.map(a=>[a.id,a.status,a.progress,a.step,a.pid,
+              a.context_messages,a.memory_bytes,a.interrupt_reason,a.resume_count,
+              Math.floor((a.silence_seconds||0)/10)]))
+          + '|' + state.messages.length
+          + '|' + (state.events ? state.events.length : 0)
+          + '|' + state.phase
+          + '|' + JSON.stringify(state.resume_requests||[])
+          + '|' + JSON.stringify(state.plan||{})
+          + '|' + JSON.stringify(state.tasks)
+          + '|' + JSON.stringify((state.pending_notes||[]).map(m=>m.id))
+          + '|' + JSON.stringify(state.current_task||{})
+          + '|' + JSON.stringify(state.tokens===undefined?{__missing:1}:state.tokens)
+          + '|' + JSON.stringify(state.tokens_error||'');
+  renderProjects();
+  fillNoteTargets();
+  if($('smodal').classList.contains('on')) renderSettings();
+
+  if(s === sig) { $('hdTime').textContent = state.server_time || ''; return; }
+  sig = s;
+
+  renderPipe(); renderOverview(); renderAgents(); renderFeed(); renderTasks(); renderHeat();
+  renderResumeQueue(); renderPlan(); renderCommand(); renderPending();
+  try{ renderTokens(); renderRounds(); }catch(e){
+    console.error('renderTokens:', e && e.message || e);
+    const tb = $('tokBody');
+    if(tb) tb.innerHTML = '<div class="tok-err">计量数据读取失败 <button class="btn" onclick="retryTokens()">重试</button></div>';
+  }
+  if($('pmodal').classList.contains('on')) openPlanMap(true);
+  const pn = (state.pending_notes||[]).length;
+  $('hdPend').textContent = pn;
+  $('hdPendWrap').style.display = pn ? '' : 'none';
+  const on = state.agents.filter(a=>a.status==='working').length;
+  $('hdOnline').textContent = on;
+  $('hdTotal').textContent = state.agents.length;
+  $('hdMsg').textContent = state.messages.length;
+  $('agOnline').textContent = on + ' 活跃';
+  $('tkCount').textContent = Object.keys(state.tasks||{}).length + ' 个任务';
+  $('hdTime').textContent = state.server_time || '';
+}
+
+/* 项目概要 · 运行时（v4.2）。对应 OpenCode 版的「项目概要区（v4.1 新增）」：
+   同样在右栏顶部给出一屏"我现在看的到底是什么"的元信息 —— 面板版本、当前项目、
+   阶段、端口、Token 口径、看门狗阈值。差异化就落在版本标识与 Token 口径两行上：
+   本版明确标 WorkBuddy，并且**优先展示 WorkBuddy 原生真实用量**（native.usage，
+   来自 ~/.workbuddy/workbuddy.db 的 session_usage），读不到才退回字节估算账本。 */
+function renderOverview(){
+  const box = $('overview'); if(!box) return;
+  const st = state || {};
+  // 顺序要紧：先取 st.project（本次请求正在看的项目），再退回 projects.current。
+  // 反过来会错配 —— 「项目」行显示全局当前项目 A，而「当前阶段」显示正在看的项目 B，
+  // 切换项目查看时 100% 复现（实跑验证时抓到的）。
+  const cur = st.project || (st.projects && st.projects.current) || '—';
+  const meta = (((st.projects||{}).list)||[]).find(p=>p.id===cur) || {};
+  const ep = st.phase || '—';
+  const est = (st.phases||[]).find(p=>p.id===ep);
+  const port = location.port || '—';
+  const nat = st.native || {};
+  const u = nat.usage || {};
+  const btTxt = (u.used_tokens != null)
+      ? 'WorkBuddy session（真实 ' + u.used_tokens + ' / ' + (u.window_tokens || '—') + '）'
+      : '字节估算（原生真实值不可读）';
+  const na = nat.artifacts || {}, nc = nat.changes || {}, nt = nat.tasks || {};
+  const rows = [
+    ['面板版本', '<b class="ov-wb">WorkBuddy 版 v4.2</b>', ''],
+    ['项目', esc(cur) + (meta.name ? ' · ' + esc(meta.name) : ''), meta.brief ? esc(meta.brief) : ''],
+    ['当前阶段', esc(ep) + (est ? ' ' + esc(est.name) : ''), ''],
+    ['最近更新', esc(st.updated || '—'), '服务器时间 ' + esc(st.server_time || '—')],
+    ['服务端口', esc(String(port)), '端口以 runtime/.port 为准'],
+    ['Token 口径', esc(btTxt), '看板优先展示真实值'],
+    ['看门狗阈值', '告警 ' + (st.silence_warn || '—') + 's / 中断 ' + (st.silence_interrupt || '—') + 's',
+      '长命令前先发 heartbeat'],
+    ['原生账本', '变更 ' + (nc.count || 0) + ' · 产物 ' + (na.count || 0) + ' · 任务 ' + (nt.count || 0),
+      'WorkBuddy 自动落盘，不再自建一份'],
+  ];
+  box.innerHTML = rows.map(([k,v,x])=>
+    `<div class="ovrow"><span class="ovk">${k}</span><span class="ovv">${v}${x?`<i>${x}</i>`:''}</span></div>`
+  ).join('');
+}
+
+function renderPipe(){
+  const cur = state.phase;
+  const idx = state.phases.findIndex(p=>p.id===cur);
+  $('pipe').innerHTML = state.phases.map((p,i)=>
+    `<span class="ph ${p.id===cur?'on':(i<idx?'done':'')}">${p.id} ${p.name}</span>`).join('');
+}
+
+function silenTxt(s){
+  if(s===null||s===undefined) return '—';
+  if(s<60) return s+'s';
+  if(s<3600) return Math.floor(s/60)+'m'+String(Math.floor(s%60)).padStart(2,'0')+'s';
+  return (s/3600).toFixed(1)+'h';
+}
+
+function renderAgents(){
+  // 主 Agent 由顶部「指挥台」代表，不再在实例列表里出现第二次，
+  // 否则同一个主 Agent 会显示成两张卡（这是"为什么有两个主 Agent"的根因）
+  const list = state.agents.filter(a=>a.id !== 'orchestrator');
+  $('agents').innerHTML = list.map(a=>{
+    const col = a.color, isSel = filter===a.id;
+    const int = a.status==='interrupted';
+    const silent = (a.status==='working') && a.silence_seconds!==null
+                   && a.silence_seconds>=state.silence_warn;
+    const cls = 'ag' + (isSel?' sel':'') + (int?' int':'') + (silent?' warn':'');
+    const sTag = a.silence_seconds!==null && a.silence_seconds>=state.silence_warn
+      ? `<span class="silen" data-silen="${a.id}">静默 ${silenTxt(a.silence_seconds)}</span>` : '';
+    const banner = int ? `<div class="ag-int">
+        <b>进程已中断 —— 它并没有在跑</b>
+        ${esc(a.interrupt_reason||'未记录原因')}
+        <div>停在 ${a.progress}%${a.step?'：'+esc(a.step):''}${a.task_id?'　任务 '+esc(a.task_id):''}</div>
+        <div class="row">
+          <button class="resbtn" onclick="event.stopPropagation();askResume('${a.id}')">恢复此 agent（同 id 续跑）</button>
+          ${a.resume_count?`<span style="font-size:10px">累计恢复 ${a.resume_count} 次</span>`:''}
+        </div>
+      </div>` : '';
+    const pend = a.status==='pending_resume' ? `<div class="ag-int"
+        style="background:#FAEEDA;border-color:#FAC775;color:#854F0B">
+        <b>恢复请求已登记，等待主 Agent 续跑</b>${esc(a.resume_requested_at||'')}</div>` : '';
+    const tk = ((state.tokens||{}).agents||{})[a.id];
+    const tokLine = tk
+      ? `本轮 ${fmtTok(tk.round_tokens)} · 累计 ${fmtTok(tk.total_tokens)} · ≈${
+          tk.unpriced ? '<span class="tok-unpriced">未定价</span>' : fmtCost(tk.cost_usd)}`
+      : '本轮 -- · 累计 -- · ≈$--';
+    return `<div class="${cls}" onclick="setFilter('${a.id}')">
+      <div class="ag-top">
+        <div class="av" style="background:${col}">${a.short}</div>
+        <div class="ag-nm">
+          <b>${a.name}</b>
+          <i>${esc(a.desc)}</i>
+        </div>
+        <span class="st ${a.status}">${S[a.status]||a.status}</span>
+      </div>
+      <div class="bar"><i style="width:${a.progress}%;background:${col}"></i></div>
+      <div class="ag-step">${a.step ? esc(a.step) : '—'}${sTag}</div>
+      <div class="ag-meta"><span class="mdl" title="下一轮派发将使用的模型（来自项目配置 registry）">下轮 ${esc(a.next_model||a.runtime_model||'default')}</span>${(a.next_model && a.runtime_model && a.next_model!==a.runtime_model)
+        ? `<span class="mdl" style="background:rgba(186,117,23,.14)" title="本轮实际派发时用的模型——与配置不一致，说明派发方没读配置">本轮 ${esc(a.runtime_model)}</span>`
+        : ''}${a.pid?' · pid '+a.pid:(a.status==='working'||a.status==='resuming')?' · Agent派发·无本地进程号':' · 未启动'} · ctx ${a.context_messages} · mem ${kb(a.memory_bytes)}${a.rounds?' · r'+a.rounds:''}</div>
+      <div class="ag-tok">${tokLine}</div>
+      ${banner}${pend}
+    </div>`;
+  }).join('');
+}
+
+/* 恢复：登记请求 → 主 Agent 会以同一个 agent id 带记忆续跑（不是新开） */
+async function askResume(id){
+  const note = prompt('给主 Agent 的恢复备注（可留空）：\n\n该 agent 会带着自己的私有记忆、收件箱与上次进度继续，不会从零开始。','');
+  if(note===null) return;
+  const r = await post('/api/agent/resume', {agent:id, note});
+  if(r && r.error){ uiToast(r.error, true); return; }
+  uiToast('已登记恢复请求，主 Agent 将续跑「'+id+'」');
+  sig=''; await poll();
+}
+
+/* 待恢复队列：让用户一眼看到"谁断了、断在哪、等谁接手" */
+function renderResumeQueue(){
+  const rq = (state && state.resume_requests) || [];
+  $('resq').innerHTML = rq.map(r=>`<div class="resq">
+      <b>待恢复 · ${esc(r.agent)}</b>　由 ${esc(r.by||'user')} 提出<br>
+      停在 ${r.progress}%${r.step?'：'+esc(r.step):''}${r.task_id?'　任务 '+esc(r.task_id):''}
+      ${r.interrupt_reason?'<br>中断原因：'+esc(r.interrupt_reason):''}
+      ${r.note?'<br>备注：'+esc(r.note):''}
+    </div>`).join('');
+}
+
+const PS = {done:'已完成', working:'进行中', pending:'待办', blocked:'阻塞'};
+
+/* ---------- 主 Agent 指挥台 ----------
+   主 Agent 是项目负责人，它的面板只回答三件事：
+   整个项目百分之多少了 · 现在卡在哪一步 · 我（用户）的话还有几句没被处理。 */
+function planCurrent(){
+  const st = ((state || {}).plan || {}).stages || [];
+  return st.find(s=>s.status==='working') || st.find(s=>s.status==='blocked') || null;
+}
+
+function renderCommand(){
+  const box = $('cmd');
+  if(!box || !state) return;
+  const p = state.plan || {}, st = p.stages || [];
+  // v3.7：阶段状态用派生值统一判定（plan 手填的 doing/pending 与运行态 working 两套词曾导致
+  // 「当前阶段：全部阶段已完成」与地图自相矛盾）
+  const dd = st.map(s=>({s, d: planDerive(s)}));
+  const cur = (dd.find(x=>['doing','working'].includes(x.d.status)) || {}).s || null;
+  const curD = (dd.find(x=>['doing','working'].includes(x.d.status)) || {}).d;
+  const blocked = dd.filter(x=>x.d.status==='blocked').length;
+  const pend = dd.filter(x=>x.d.status==='pending').length;
+  const done = dd.filter(x=>x.d.status==='done').length;
+  const ovNow = (()=>{ const tw=st.reduce((a,s)=>a+(Number(s.weight)||0),0);
+    return tw>0 ? Math.round(st.reduce((a,s)=>a+(Number(s.weight)||0)*planDerive(s).progress/100,0)/tw*100)
+                : (p.overall||0); })();
+  const t = state.current_task;
+  const ag = t ? (state.agents.find(a=>a.id===t.agent) || {}) : {};
+  const me = state.agents.find(a=>a.id==='orchestrator') || {};
+  const pn = (state.pending_notes || []).length;
+  const urg = state.pending_urgent || 0;
+  box.innerHTML = `
+    <div class="cmd-h">
+      <div class="av">主</div>
+      <div class="cn"><b>主 Agent · 项目负责人</b><i>${esc(p.title || '未命名项目')}</i></div>
+      <button onclick="openPlanMap()">完整规划</button>
+    </div>
+    <div class="cmd-ov">
+      <b>${ovNow}%</b><span>整体完成度</span>
+      <u>${done}/${st.length} 阶段完成</u>
+    </div>
+    <div class="planbar"><i style="width:${ovNow}%"></i></div>
+    <div class="cmd-row">当前阶段：${cur
+      ? `<b>${esc(cur.id)} ${esc(cur.name)}</b><em>${(curD&&curD.progress)||0}%</em>`
+      : (st.length ? '<b style="color:var(--green)">全部阶段已完成</b>'
+                   : '<b style="color:var(--warn,#c8963e)">尚未规划阶段——主 Agent 未铺 stages</b>')}</div>
+    <div class="cmd-row">当前任务：${t
+      ? `<b>${esc(t.title || t.id)}</b><em>${t.progress || 0}%</em>`
+      : '<span style="color:var(--tx3)">暂无进行中的任务</span>'}</div>
+    ${(t && t.agent) ? `<div class="cmd-row" style="color:var(--tx3);font-size:10.5px">
+       执行者 ${esc(ag.name || t.agent)}${t.phase ? '　阶段 ' + esc(t.phase) : ''}</div>` : ''}
+    <div class="cmd-row" style="color:var(--tx3);font-size:10px;margin-top:8px;
+        border-top:1px dashed var(--line);padding-top:6px">
+      主 Agent 本体：${S[me.status] || me.status || '—'} · ctx ${me.context_messages || 0}
+      · mem ${kb(me.memory_bytes || 0)} · 最近 ${(me.last_seen || '—').slice(11) || '—'}</div>
+    <div class="cmd-kpi">
+      <div class="kpi ${urg ? 'urg' : ''}"><b>${pn}</b><span>待处理指令</span></div>
+      <div class="kpi ${blocked ? 'blk' : ''}"><b>${blocked}</b><span>阻塞</span></div>
+      <div class="kpi"><b>${pend}</b><span>待办阶段</span></div>
+    </div>`;
+}
+
+/* ---------- 待处理的用户指令 ----------
+   用户的话是待办，不是聊天记录。发完就沉底 = 等于没说，所以单独置顶成队列。 */
+function renderPending(){
+  const box = $('pend');
+  if(!box || !state) return;
+  const ns = state.pending_notes || [];
+  if(!ns.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = '';
+  const urg = state.pending_urgent || 0;
+  box.innerHTML =
+    `<div class="pend-h">待处理的用户指令 ${ns.length} 条${urg ? `（加急 ${urg}）` : ''}
+       <u>主 Agent 唤醒后优先处理</u></div>` +
+    ns.map(m=>{
+      const isU = (m.meta || {}).priority === 'urgent';
+      const toTxt = m.to === '*' ? '全体' : m.to.split(',').map(t=>{
+        const a = state.agents.find(x=>x.id===t);
+        return t === 'orchestrator' ? '主 Agent' : (a ? a.name : t);}).join('、');
+      return `<div class="pn ${isU ? 'urg' : ''}">
+        <div class="pn-t">${isU ? '<span class="ug">加急</span>' : ''}
+          <span>${m.ts.slice(5, 16)} → ${esc(toTxt)}</span>
+          <button onclick="ackNote(${m.id})">标记已处理</button></div>
+        <div class="pn-b">${hi(m.body)}</div></div>`;
+    }).join('');
+}
+
+async function ackNote(id){
+  const r = await post('/api/note/ack', {id, by: 'user'});
+  if(r && r.error){ uiToast(r.error, true); return; }
+  uiToast('已标记处理完成');
+  sig = ''; await poll();
+}
+
+/* ---------- 完整规划：主 Agent 交出的作战地图 ---------- */
+function openPlanMap(keep){
+  const p = (state && state.plan) || {};
+  const st = p.stages || [];
+  const cur = planCurrent();
+  // 与右列同口径：弹窗整体完成度按派生阶段进度加权
+  const tw2 = st.reduce((a,s)=>a+(Number(s.weight)||0),0);
+  const ov2 = tw2>0 ? Math.round(st.reduce((a,s)=>
+    a+(Number(s.weight)||0)*planDerive(s).progress/100,0)/tw2*100) : (p.overall||0);
+  const rows = st.map(s=>{
+    const d = planDerive(s);
+    return `
+    <tr class="${(cur && s.id === cur.id) ? 'cur' : ''}">
+      <td style="font-family:ui-monospace,Consolas,monospace;color:var(--tx3)">${esc(s.id)}</td>
+      <td class="nm">${esc(s.name)}</td>
+      <td>${esc(s.owner && s.owner!=='—' ? s.owner : d.owner)}</td>
+      <td style="text-align:center"><span class="pst ${d.status}">${PS[d.status] || d.status}</span></td>
+      <td style="text-align:center;font-family:ui-monospace,Consolas,monospace">${d.progress}%${
+        d.n?`<i style="font-size:9.5px;color:var(--tx3)">（${d.n} 任务）</i>`:''}</td>
+      <td style="text-align:center;color:var(--tx3)">${s.weight || 0}</td>
+      <td class="dl">${esc(s.deliverable || d.del)}</td>
+      <td class="no">${esc(s.note || '')}</td>
+    </tr>`;}).join('');
+  const ms = (p.milestones || []).slice().reverse().map(m=>
+    `<div class="milestone"><u>${esc(String(m.at || '').slice(0, 16))}</u>${esc(m.text)}</div>`).join('');
+  // v3.5：表头也加自动检测层——阻塞与下一步不再只靠手填（静态）字段
+  const doneN = st.filter(s=>['done'].includes(planDerive(s).status)).length;
+  const doingNow = st.filter(s=>['doing','working'].includes(planDerive(s).status));
+  const tasksAll = Object.values(state.tasks||{});
+  const stuck = tasksAll.filter(t=>['blocked','interrupted','cancelled'].includes(t.status));
+  const agentsInt = (state.agents||[]).filter(a=>a.status==='interrupted');
+  const autoParts = [];
+  if(doingNow.length) autoParts.push('进行中：' + doingNow.map(s=>s.id).join('、'));
+  autoParts.push(`已完成 ${doneN}/${st.length} 阶段`);
+  if(agentsInt.length) autoParts.push('中断待处理：' + agentsInt.map(a=>a.name||a.id).join('、'));
+  if(stuck.length) autoParts.push('卡住任务：' + stuck.map(t=>t.id||t.title).join('、'));
+  const lastEv = (state.events||[]).filter(e=>['progress','finish','task','resume','spawn'].includes(e.kind)).slice(-1)[0];
+  $('pmBody').innerHTML = `
+    <div class="pm-h" style="padding:0 0 12px;border:none">
+      <b>${esc(p.title || '未命名项目')}</b>
+      <i>${esc(p.goal || '')}</i>
+      ${p.blockers ? `<div class="pm-blk"><b>当前阻塞：</b>${esc(p.blockers)}</div>` : ''}
+      <div class="pm-blk" style="color:#0F6E56;background:#E1F5EE;border-color:#9FE0CB">
+        <b>下一步（自动）：</b>${esc(doingNow.length
+          ? doingNow.map(s=>`${s.id} ${s.name}（${planDerive(s).progress}%，执行者见下方任务卡）`).join('；') + ' —— 完成后进下一阶段'
+          : '暂无进行中阶段')}
+      </div>
+      ${p.next ? `<div style="font-size:10.5px;color:var(--tx3);margin:4px 0 8px">编排者备注：${esc(p.next)}</div>` : ''}
+      <div class="pm-blk" style="background:#F5F5F2;border-color:var(--line)">
+        <b>自动检测（实时）：</b>${esc(autoParts.join('　·　'))}
+        ${lastEv ? `<br><span style="font-size:10.5px;color:var(--tx3)">最近动态 ${esc(lastEv.ts||'')}　${esc(String(lastEv.text||'').slice(0,50))}</span>` : ''}
+      </div>
+    </div>
+    <div class="pm-ov"><b>${ov2}%</b><span>整体完成度（自动派生）</span></div>
+    <div class="planbar" style="margin-bottom:15px"><i style="width:${ov2}%"></i></div>
+    ${st.length ? `<table class="pm"><thead><tr>
+        <th>阶段</th><th>名称</th><th>负责人</th><th>状态</th><th>进度</th><th>权重</th>
+        <th>交付物</th><th>备注</th></tr></thead><tbody>${rows}</tbody></table>`
+      : '<div class="empty">尚未制定整体规划</div>'}
+    ${ms ? `<div style="margin-top:16px;font-size:11px;color:var(--tx3);font-weight:500">里程碑</div>${ms}` : ''}
+    <div class="hint">规划由主 Agent 维护，例如
+      <code>python cli.py plan --stage R1 --status working --progress 40</code>。<br>
+      整体进度 = Σ(权重 × 阶段进度) / Σ权重 —— 所以工程量大的阶段权重更高，不是简单数"完成了几个阶段"。</div>`;
+  if(!keep) $('pmodal').classList.add('on');
+}
+
+/* 主 Agent 作为项目负责人交出的"作战地图"：整体完成度 + 逐阶段状态 */
+/* 阶段进度自动派生（v3.5）：从真实任务反推，不依赖编排者手动 plan 更新 */
+function planDerive(s){
+  const tasks = Object.values((state && state.tasks) || {});
+  const hit = tasks.filter(t=>(t.phase===s.id)||
+    String(t.id||t.task_id||'').toUpperCase().startsWith(String(s.id).toUpperCase()+'-'));
+  if(!hit.length)
+    return {progress:Number(s.progress)||0, status:s.status, owner:'—', del:'—', n:0};
+  const pg = Math.round(hit.reduce((a,t)=>a+(Number(t.progress)||0),0)/hit.length);
+  const allDone = hit.every(t=>t.status==='done' || (Number(t.progress)||0)>=100);
+  const anyWork = hit.some(t=>t.status==='working'||t.status==='doing');
+  const owners = [...new Set(hit.map(t=>{
+    const a=(state.agents||[]).find(x=>x.id===t.agent);
+    return a?(a.short||a.name):(t.agent||'—');}))].join('、');
+  const arts = hit.flatMap(t=>(t.artifacts||[]).map(a=>String(a.path||'').split('/').pop()));
+  return {progress:pg, status: allDone?'done':(anyWork?'doing':(hit[0].status||s.status)),
+          owner:owners, del:arts.length?arts.slice(0,2).join('、')+
+          (arts.length>2?` 等${arts.length}件`:''):'—', n:hit.length};
+}
+
+function renderPlan(){
+  const p = (state && state.plan) || {};
+  const st = p.stages || [];
+  if(!st.length){ $('plan').innerHTML = '<div class="empty">尚未制定整体规划</div>'; return; }
+  const ov = p.overall || 0;
+  const rows = st.map(s=>{
+    const d = planDerive(s);
+    return `
+    <div class="pl-row" title="负责人：${esc(d.owner)}　交付物：${esc(d.del)}">
+      <span class="pid2">${esc(s.id)}</span>
+      <span class="pnm">${esc(s.name)}</span>
+      <span class="pst ${d.status}">${PS[d.status]||d.status}</span>
+      <span class="pw">${d.progress}%</span>
+    </div>
+    ${d.del!=='—'?`<div class="pl-note">交付：${esc(d.del)}　负责人：${esc(d.owner)}</div>`:''}
+    ${s.note?`<div class="pl-note">${esc(s.note)}</div>`:''}`;}).join('');
+  // 整体完成度同样按派生值加权重算，保证与表格一致
+  const tw = st.reduce((a,s)=>a+(Number(s.weight)||0),0);
+  const ov2 = tw>0 ? Math.round(st.reduce((a,s)=>
+    a+(Number(s.weight)||0)*planDerive(s).progress/100,0)/tw*100) : (p.overall||0);
+  const curIdx = st.findIndex(s=>['doing','working'].includes(planDerive(s).status));
+  const cur = curIdx>=0 ? st[curIdx] : null;
+  const ms = (p.milestones||[]).slice(-3).map(m=>
+    `<div class="milestone"><u>${esc(String(m.at||'').slice(5,16))}</u>${esc(m.text)}</div>`).join('');
+  $('plan').innerHTML = `
+    <div class="pl-ov"><b>${ov2}%</b><span>整体完成度（自动派生）${
+      cur?'　当前：'+esc(cur.id)+' '+esc(cur.name):'　已全部完成'}</span></div>
+    <div class="planbar"><i style="width:${ov2}%"></i></div>
+    ${rows}
+    ${ms?`<div style="margin-top:10px;font-size:10.5px;color:var(--tx3);font-weight:500">最近里程碑</div>${ms}`:''}`;
+}
+
+/* 留言通道的收件人下拉（主 Agent + 各子 agent） */
+function fillNoteTargets(){
+  const sel = $('noteTo');
+  if(!sel || !state) return;
+  // 主 Agent 固定排在第一个；registry 里它也在 agents 中，必须去重，
+  // 否则下拉里会出现两个「主 Agent」
+  const want = ['orchestrator'].concat(
+    (state.agents||[]).map(a=>a.id).filter(id=>id !== 'orchestrator'));
+  const key = want.join(',');
+  if(sel.dataset.filled === key) return;
+  sel.dataset.filled = key;
+  const cur = sel.value;
+  sel.innerHTML = want.map(id=>{
+    const a = (state.agents||[]).find(x=>x.id===id);
+    const nm = id==='orchestrator' ? '主 Agent' : (a ? a.name : id);
+    return `<option value="${id}">${nm}</option>`;
+  }).join('');
+  if(want.includes(cur)) sel.value = cur;
+}
+
+async function sendNote(){
+  const body = ($('noteBody').value||'').trim();
+  const to = $('noteTo').value || 'orchestrator';
+  if(!body){ uiToast('请先填写内容', true); return; }
+  const priority = $('noteUrg').checked ? 'urgent' : 'normal';
+  const r = await post('/api/note', {body, to, priority});
+  if(r && r.error){ uiToast(r.error, true); return; }
+  $('noteBody').value = '';
+  $('noteUrg').checked = false;
+  $('urgSw').classList.remove('on');
+  updateCount();
+  uiToast((priority === 'urgent' ? '【加急】' : '')
+          + '已投递给' + (to === 'orchestrator' ? '主 Agent' : '「'+to+'」'));
+  sig=''; await poll();
+}
+
+/* 快捷短语：把常见的沟通意图做成一点即填，不用每次从头打字 */
+function tpl(t){
+  const el = $('noteBody');
+  if(!el) return;
+  el.value = (el.value && !/\n$/.test(el.value) ? el.value + '\n' : el.value) + t;
+  el.focus();
+  el.selectionStart = el.selectionEnd = el.value.length;
+  updateCount();
+}
+
+function updateCount(){
+  const el = $('noteBody');
+  if(el && $('noteCount')) $('noteCount').textContent = (el.value || '').length + ' 字';
+}
+
+/* 输入框放大/收起：长需求不该挤在 3 行里写 */
+function toggleCompose(){
+  const c = $('compose');
+  if(!c) return;
+  c.classList.toggle('big');
+  $('cpX').textContent = c.classList.contains('big') ? '收起' : '放大';
+  const el = $('noteBody');
+  if(el) el.focus();
+}
+
+/* Ctrl/⌘ + Enter 发送（普通 Enter 换行，方便写多条需求） */
+(() => {
+  const nb = document.getElementById('noteBody');
+  if(nb){
+    nb.addEventListener('keydown', e => {
+      if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); sendNote(); }
+    });
+    nb.addEventListener('input', updateCount);
+  }
+  const ug = document.getElementById('noteUrg');
+  if(ug) ug.addEventListener('change', e =>
+    document.getElementById('urgSw').classList.toggle('on', e.target.checked));
+})();
+
+const EVK = {spawn:'启动', progress:'进度', finish:'完成', blocked:'阻塞',
+             task:'任务', phase:'阶段', memory:'记忆',
+             interrupt:'中断', resume:'恢复', resume_request:'恢复请求', heartbeat:'心跳',
+             say:'发言', plan:'规划'};
+
+/* v3.9：记住展开的「完整时间线」——1.2s 轮询重绘会销毁 <details>，
+   用 key 集合在重绘时还原展开状态（与设置面板防打断同族的轮询重绘问题） */
+const openTL = new Set();
+document.addEventListener('toggle', e=>{
+  const t = e.target;
+  if(t && t.dataset && t.dataset.tl){
+    t.open ? openTL.add(t.dataset.tl) : openTL.delete(t.dataset.tl);
+  }
+}, true);
+
+/* ---------- 交互过程视图（v3.2）：把事件流渲染成 主Agent⇄子agent 的对话时间线 ---------- */
+let feedMode = 'msg'; // msg=消息流 | interact=交互过程
+let feedOrder = 'desc'; // desc=最新在上 | asc=正序（旧在上，读对话用）
+function toggleFeedOrder(){
+  feedOrder = feedOrder==='desc' ? 'asc' : 'desc';
+  const b = $('feedOrderBtn');
+  if(b) b.textContent = feedOrder==='desc' ? '正序↑' : '最新在上↓';
+  sig=''; render();
+}
+function toggleFeedMode(){
+  feedMode = feedMode==='msg' ? 'interact' : 'msg';
+  const b = $('feedModeBtn');
+  if(b) b.textContent = feedMode==='msg' ? '交互过程' : '返回消息流';
+  sig=''; render();
+}
+/* 事件行悬停详情：默认消息流与交互过程两处共用同一套口径 */
+function evTip(e, lab){
+  if(!state) return '';
+  const nmOf = id => (state.agents.find(x=>x.id===id)||{});
+  const nameOf = id => id==='orchestrator' ? '主 Agent'
+                    : (id==='user' ? '用户' : (nmOf(id).name||id));
+  const ag = nmOf(e.agent);
+  const to = (e.data&&e.data.to) ? ' → '+nameOf(e.data.to) : '';
+  const taskTxt = ag && ag.task_title
+    ? `${ag.task_title}（${ag.task_id||'—'}）${ag.progress||0}%`
+    : (e.data&&e.data.task_id ? String(e.data.task_id) : '—');
+  return [
+    `角色：${nameOf(e.agent)}${ag&&ag.runtime_model?`（${ag.runtime_model}）`:''}`,
+    `动作：${lab||e.kind}${to}`,
+    `时间：${e.ts||''}`,
+    `任务：${taskTxt}`,
+    e.data&&e.data.pct!=null ? `本次进度：${e.data.pct}%` : null,
+    '————',
+    String(e.text||'')
+  ].filter(Boolean).join('\n');
+}
+
+/* v3.8：交互过程改「聊天记录式」——主 Agent/系统在左，子 agent 汇报在右，
+   派发/交付/中断做通栏分隔条；一眼读出「谁对谁做了什么」。悬停详情保留。 */
+function renderInteract(box){
+  const nm = id => (state.agents.find(x=>x.id===id)||{name:id,short:'·',color:'#888'});
+  const aname = id => id==='orchestrator' ? '主 Agent' : (id==='user' ? '用户' : (nm(id).name||id));
+  const stages = (state.plan||{}).stages || [];
+  const stageName = sid => { const s=stages.find(x=>x.id===sid); return s? (s.id+' '+s.name) : sid; };
+  const tasks = Object.values(state.tasks||{});
+
+  const KINDS = ['spawn','resume','progress','say','finish','task','interrupt','heartbeat','plan','phase'];
+  let evs = (state.events||[]).filter(e=>KINDS.includes(e.kind));
+  if(filter) evs = evs.filter(e=>e.agent===filter || (e.data&&e.data.to===filter));
+  evs.sort((a,b)=>(a.epoch||0)-(b.epoch||0));
+
+  /* 1) 按阶段切节：phase 事件（阶段 → Sx）是天然分节符 */
+  const sections = []; let cur = {title:'🚀 启动', events:[]};
+  sections.push(cur);
+  evs.forEach(e=>{
+    if(e.kind==='phase'){
+      const m = /S\d+/.exec(e.text||'');
+      cur = {title: m?stageName(m[0]):('阶段 '+(e.text||'')), events:[], open:e};
+      sections.push(cur); return;
+    }
+    cur.events.push(e);
+  });
+
+  /* 2) 节内按 agent 聚合成任务卡：汇报/心跳/中断归到对应角色名下 */
+  const secHtml = sections.filter(s=>s.events.length||s.open).map(sec=>{
+    const byAg = {};
+    sec.events.forEach(e=>{ (byAg[e.agent]=byAg[e.agent]||[]).push(e); });
+    const agIds = Object.keys(byAg).filter(a=>a!=='orchestrator')
+      .sort((x,y)=>((byAg[x][0]||{}).epoch||0)-((byAg[y][0]||{}).epoch||0));
+    const sysEv = byAg['orchestrator']||[];
+
+    const agCards = agIds.map(aid=>{
+      const list = byAg[aid];
+      const prog = list.filter(e=>e.kind==='progress');
+      const wd   = list.filter(e=>e.kind==='interrupt');
+      const fin  = list.filter(e=>e.kind==='finish');
+      const a    = nm(aid);
+      const task = tasks.find(t=>t.agent===aid &&
+        sec.title.startsWith(String(t.id||t.task_id||'\u0000').split('-')[0]))
+        || tasks.find(t=>t.agent===aid);
+      const arts = (task && task.artifacts) || [];
+      const span = list.length ? `${(list[0].ts||'').slice(11)} → ${(list[list.length-1].ts||'').slice(11)}` : '—';
+      const head = `<div class="tcard-h">
+          <span class="av" style="background:${a.color||'#888'}">${a.short||'·'}</span>
+          <b>${esc(a.name||aid)}</b>
+          <span class="tk-st ${task?task.status:''}">${task?({'done':'✅ 完成','working':'🔵 进行中','interrupted':'⚠ 中断','idle':'空闲'}[task.status]||task.status):''}</span>
+          <span class="tspan">${span}</span></div>`;
+      const sum = `<div class="tcard-sum">汇报 ${prog.length} 条`
+        + (wd.length?` · <b style="color:#B0653A">看门狗误判 ${wd.length} 次</b>`:'')
+        + (fin.length?' · 已交付':'')
+        + `（悬停看每次汇报详情）</div>`;
+      const artChips = arts.length
+        ? `<div class="tcard-arts">${arts.map(x=>`<span class="art-chip" title="${esc(x.summary||'')}">◉ ${esc(String(x.path||'').split('/').pop())}</span>`).join('')}</div>` : '';
+      const tlKey = sec.title + '|' + aid;
+      const tl = `<details data-tl="${esc(tlKey)}" ${openTL.has(tlKey)?'open':''}><summary>完整时间线（${list.length} 条）</summary>`
+        + list.map(e=>`<div class="mline" title="${esc(evTip(e,''))}">
+            <u>${(e.ts||'').slice(11)}</u><span class="evk ${e.kind}">${EVK[e.kind]||e.kind}</span>${esc(e.text)}</div>`).join('')
+        + `</details>`;
+      /* v3.12：交接叙事句——完成：做了【】工作→完成【】→交付【】给；进行中：正在进行【】任务·已进行X分·交付给 */
+      const stripPct = s => String(s||'').replace(/^\s*\d{1,3}%\s*/,'');
+      const clean = s => stripPct(String(s||'')).replace(/\s+/g,' ').trim();
+      const title = (task && (task.title||'').trim()) ? task.title.trim().slice(0,44) : '';
+      const p0 = prog.length ? clean(prog[0].text).slice(0,36) : '';
+      const pN = prog.length ? clean(prog[prog.length-1].text).slice(0,36) : '';
+      const durMin = (task && task.created && task.updated)
+        ? Math.max(1, Math.round((new Date(String(task.updated).replace(' ','T')) - new Date(String(task.created).replace(' ','T')))/60000)) : 0;
+      const durTxt = durMin ? (durMin>=60 ? Math.floor(durMin/60)+' 小时 '+(durMin%60)+' 分' : durMin+' 分钟') : '';
+      const doneArt = arts.length
+        ? esc(String(arts[0].path||'').split('/').pop()) + (arts.length>1 ? ` 等 ${arts.length} 件` : '')
+        : (prog.length ? `汇报 ${prog.length} 条` : '—');
+      let hlink;
+      if(fin.length){
+        const did = p0 || title || '阶段工作';
+        let done = pN || title || '阶段任务';
+        if(done===did) done = (title && title!==did) ? title : '阶段任务';
+        hlink = `<div class="hlink"><b class="hl-from">${esc(a.name||aid)}</b>`
+          + `<span class="hl-act">做了<b>【${esc(did)}】</b>工作 → 完成<b>【${esc(done)}】</b> → 交付<b>【${doneArt}】</b>`
+          + `<span class="hl-give">给 <span class="hl-to">主 Agent</span> <i class="hl-arr">▶</i></span></span></div>`;
+      } else {
+        const doing = title || pN || '阶段任务';
+        hlink = `<div class="hlink going"><b class="hl-from">${esc(a.name||aid)}</b>`
+          + `<span class="hl-act">正在进行<b>【${esc(doing)}】</b>任务${durTxt?` · 已进行 ${durTxt}`:''} · `
+          + `<span class="hl-give">交付给 <span class="hl-to">主 Agent</span> <i class="hl-arr">▶</i></span></span></div>`;
+      }
+      /* v3.13/14：交接链呼应——agent 卡后插主 Agent 段卡；验收后补「接着派发给谁」延续链条 */
+      const spEv = list.some(e=>e.kind==='spawn'||e.kind==='resume');
+      let orchSeg = '';
+      if(spEv || fin.length){
+        const pEvl = list.find(e=>e.kind==='progress');
+        const tTitle = esc(((task && (task.title||'').trim()) || (pEvl ? clean(pEvl.text).slice(0,32) : '阶段任务')));
+        const finEv = fin[fin.length-1];
+        const artName = esc(arts.length ? String(arts[0].path||'').split('/').pop()
+          : (finEv ? clean(finEv.text).slice(0,24) : '阶段汇报'));
+        const lines = [];
+        if(spEv) lines.push(`🎯 派发<b>【${tTitle}】</b><span class="hl-give">给 <span class="hl-to">${esc(aname(aid))}</span></span>`);
+        if(fin.length){
+          lines.push(`✅ 验收<b>【${artName}】</b><span class="hl-give">来自 <span class="hl-to">${esc(aname(aid))}</span></span>`);
+          /* 链条延续：该 agent 交付后主 Agent 的下一个派发动作——跨节找（下一节的 spawn 也算） */
+          const finT = finEv ? (finEv.epoch||0) : 0;
+          const nxt = evs.find(e=>(e.kind==='spawn'||e.kind==='resume') && (e.epoch||0)>finT);
+          if(nxt){
+            let nTask = null;
+            tasks.forEach(t=>{ if(t.agent===nxt.agent && (!nTask || String(t.updated||'')>String(nTask.updated||''))) nTask=t; });
+            const nTitle = esc((nTask && (nTask.title||'').trim()) || clean(nxt.text).slice(0,32) || '阶段任务');
+            lines.push(`⚡ 接着派发<b>【${nTitle}】</b><span class="hl-give">给 <span class="hl-to">${esc(aname(nxt.agent))}</span> <i class="hl-arr">▶</i></span>`);
+          } else {
+            lines.push(`⛔ 链条到此：主 Agent 已无后续派发`);
+          }
+        }
+        orchSeg = `<div class="tcard sys orch-seg"><div class="tcard-h"><span class="av" style="background:#55524B">主</span><b style="color:var(--tx2)">主 Agent</b></div>`
+          + lines.map(l=>`<div class="hlink"><span class="hl-act">${l}</span></div>`).join('')
+          + `</div>`;
+      }
+      return `<div class="tcard">${head}${hlink}${sum}${artChips}${tl}</div>${orchSeg}`;
+    }).join('');
+
+    /* v3.13：节尾只放主 Agent 纯决策明细（say/plan/phase）；派发/验收段卡已跟在各 agent 卡后 */
+    const sysDec = sysEv.filter(e=>e.kind==='say'||e.kind==='plan'||e.kind==='phase');
+    const sysLine = sysDec.length
+      ? `<div class="tcard sys"><div class="tcard-h"><span class="av" style="background:#55524B">主</span><b style="color:var(--tx2)">主 Agent 决策</b><span class="tspan">${(sysDec[0].ts||'').slice(11)} → ${(sysDec[sysDec.length-1].ts||'').slice(11)}</span></div>`
+        + sysDec.map(e=>`<div class="mline" title="${esc(evTip(e,''))}"><u>${(e.ts||'').slice(11)}</u>${esc(e.text)}</div>`).join('')
+        + `</div>` : '';
+
+    const rng = sec.events.length
+      ? `${(sec.events[0].ts||'').slice(5,16)} → ${(sec.events[sec.events.length-1].ts||'').slice(5,16)}` : '';
+    return `<div class="isec"><div class="isec-h"><b>${esc(sec.title)}</b><u>${rng}</u></div>
+      ${agCards}${sysLine}</div>`;
+  }).join('');
+
+  box.innerHTML = `<div class="ivwrap">${secHtml}</div>`;
+  // 默认最新节在最上；feedOrder==='asc' 时保持正序
+  const wrap = box.querySelector('.ivwrap');
+  if(feedOrder!=='asc' && wrap){
+    Array.from(wrap.children).reverse().forEach(ch=>wrap.appendChild(ch));
+  }
+}
+function e0_agent(evs){ return (evs[0]||{}).agent; }
+
+/* 把 [产出]/[自验收] 这类机器式回传信号排版成能读的中文块（说人话） */
+const SIG_LABEL = {'agent':'角色','产出':'产出物','自验收':'自验收','下游':'交接给下游',
+  '风险':'风险','下一步建议':'下一步','裁定':'裁定','改动':'改动','测试':'测试',
+  '兼容':'兼容','产出物':'产出物','结论':'结论','验证':'验证','遗留':'遗留','补充':'补充',
+  // 白话四段（v3.4，handoff-schema §4.2）
+  '做了什么':'做了什么','结果如何':'结果如何','遇到什么问题':'遇到什么问题','下一步要干嘛':'下一步要干嘛'};
+function fmtSignal(body){
+  // 【白话四段】与 [机器信号] 统一按 [标签] 解析；只转换已知标签，避免误伤正文中的【】
+  let s = String(body||'').replace(/【(做了什么|结果如何|遇到什么问题|下一步要干嘛)】/g,'[$1]');
+  const re = /^\s*\[([^\]]{1,8})\]/gm;
+  const hits = s.match(re);
+  if(!hits || hits.length < 2) return hi(s);      // 不像信号就原样输出
+  const parts = s.split(/^\s*\[([^\]]{1,8})\]/m);
+  let html = '', first = '';
+  if(parts[0] && parts[0].trim()) first = hi(parts[0].trim());
+  for(let i=1;i<parts.length;i+=2){
+    const k = parts[i].trim(), v = (parts[i+1]||'').trim();
+    const lab = SIG_LABEL[k.toLowerCase()] || k;
+    html += `<div class="sig-r"><span class="sig-k">${esc(lab)}</span><span class="sig-v">${hi(v)}</span></div>`;
+  }
+  return (first?`<div class="sig-lead">${first}</div>`:'') + `<div class="sig">${html}</div>`;
+}
+
+function renderFeed(){
+  if(feedMode==='interact'){ renderInteract($('feed')); return; }
+  const box = $('feed');
+  // v3.5：最新在最上（用户要求）——倒序渲染，自动滚动改为钉在顶部
+  const nearTop = box.scrollTop < 80;
+  const colors = {}; state.agents.forEach(a=>colors[a.id]=a.color);
+  const nm = id => (state.agents.find(x=>x.id===id)||{name:id,short:'?'});
+
+  const items = [];
+  (state.messages||[]).forEach(m=>items.push(Object.assign({_k:'msg'}, m)));
+  (state.events||[]).forEach(e=>items.push(Object.assign({_k:'ev'}, e)));
+  items.sort((a,b)=>(feedOrder==='asc'?1:-1)*((a.epoch||0)-(b.epoch||0)));   // v3.8：排序可切
+  let msgs = filter
+    ? items.filter(x=>x._k==='ev' ? x.agent===filter
+                                  : (x.from===filter||x.to===filter||x.to==='*'))
+    : items;
+  // 「仅消息」：只看正式消息（交付/会签/工件登记/留言），隐藏进度与派发事件
+  const om = $('onlyMsg');
+  if(om && om.checked) msgs = msgs.filter(x=>x._k==='msg');
+  if(!msgs.length){
+    box.innerHTML = `<div class="empty">${filter?'该 agent 暂无动态':(om&&om.checked?'暂无正式消息。子 agent 交付、会签意见、工件登记与你的留言会出现在这里。':'尚无动态。<br>派发子 agent 后，它们的进度与交流会实时出现在这里。')}</div>`;
+    return;
+  }
+
+  box.innerHTML = msgs.map(m=>{
+    if(m._k==='ev'){
+      let a = nm(m.agent), verb = EVK[m.kind]||m.kind, txt = m.text;
+      /* v3.15：主 Agent 的动作进信息流——派发/续派主语换成主 Agent，交付注明验收方 */
+      if(m.kind==='spawn'||m.kind==='resume'){
+        a = {short:'主', color:'#55524B', name:'主 Agent'};
+        verb = m.kind==='spawn' ? '🎯 派发' : '🔁 续派';
+        txt = '「'+(nm(m.agent).name||m.agent)+'」 '+(m.text||'');
+      }
+      const tail = m.kind==='finish' ? '<span style="color:var(--blue)"> → 主 Agent 验收</span>' : '';
+      return `<div class="ev" title="${esc(evTip(m, verb))}"><span style="color:${a.color||'#888'};flex:0 0 46px">${a.short||'?'}</span>
+        <span class="evk ${m.kind}">${verb}</span>
+        <span class="evt">${esc(txt)}${tail}</span>
+        <span style="margin-left:auto;font-size:10px">${(m.ts||'').slice(11)}</span></div>`;
+    }
+    if(m.type==='system'||m.from==='__sys__')
+      return `<div class="sys">${esc(m.body)}</div>`;
+    // 用户留言优先呈现：单独配色 + 加急徽章，避免淹没在 agent 的机器播报里
+    if(m.from === 'user'){
+      const wasUrgent = (m.meta || {}).priority === 'urgent';
+      const acked = !(state.pending_notes || []).some(x => String(x.id) === String(m.id));
+      // v3.7：已处理的留言摘掉加急强调（不再置顶警示、不再红框），只留灰色「已处理」标记
+      const isU = wasUrgent && !acked;
+      const toTxt2 = m.to==='*' ? '全体' : m.to.split(',').map(t=>{
+        const ag = state.agents.find(x=>x.id===t);
+        return t==='orchestrator' ? '主 Agent' : (ag?ag.name:t);}).join('、');
+      return `<div class="msg user${acked ? ' done' : ''}" ${isU ? 'style="border-color:#F09595;background:#FEF6F6"' : ''}>
+        <div class="av" style="background:${isU ? '#A32D2D' : (acked ? '#9A9A93' : '#854F0B')}">我</div>
+        <div class="mb">
+          <div class="mh">
+            <b style="color:${isU ? '#A32D2D' : (acked ? 'var(--tx3)' : '#854F0B')}">用户指令</b>
+            ${isU ? '<span class="ug">加急</span>' : (acked && wasUrgent ? '<span class="ug" style="background:#EFEFEA;color:var(--tx3)">曾加急</span>' : '')}
+            ${acked ? '<span class="pn-ack-tag">已处理</span>' : ''}
+            <span>${m.ts.slice(11)}</span>
+            <span class="to">→ ${esc(toTxt2)}</span>
+          </div>
+          <div class="mbody" ${acked ? 'style="color:var(--tx3)"' : ''}>${hi(m.body)}</div>
+        </div></div>`;
+    }
+    const c = colors[m.from]||'#888780';
+    const toTxt = m.to==='*' ? '全体' : m.to.split(',').map(t=>{
+      const ag = state.agents.find(x=>x.id===t); return ag?ag.name:t;}).join('、');
+    return `<div class="msg">
+      <div class="av" style="background:${c}">${(state.agents.find(x=>x.id===m.from)||{short:'?'}).short}</div>
+      <div class="mb">
+        <div class="mh">
+          <b style="color:${c}">${(state.agents.find(x=>x.id===m.from)||{name:m.from}).name}</b>
+          <span>${m.ts.slice(11)}</span>
+          <span class="to">→ ${esc(toTxt)}</span>
+        </div>
+        <div class="mbody">${fmtSignal(m.body)}</div>
+        ${m.artifact?`<div class="art" onclick="openArtifact('${encodeURIComponent(m.artifact)}')"
+          title="${esc(m.artifact)}（点击看前 30 行）">
+          <span>&#9673;</span><b>${esc(m.artifact.split('/').pop())}</b></div>`:''}
+      </div></div>`;
+  }).join('');
+  // 最新在最上时，「自动置顶」= 有新消息且你本就在顶部 → 保持在顶部（不打断手动下翻）
+  if($('autoScroll').checked && nearTop) box.scrollTop = 0;
+}
+
+/* ---------- 节点工件面板（07 §3 L2 四态） ----------
+   展开态存内存 Set（按 task key），poll 重绘后保持，不写 localStorage。 */
+const openTasks = new Set();
+/* 历史任务兜底目录映射 —— 权威定义 = 09-api-contract §3.1，照抄不改粒度（C3） */
+const PHASE_FALLBACK = {
+  S0:{p:'docs/PROJECT_BRIEF.md', dir:false},
+  S1:{p:'docs/00-charter/',      dir:true},
+  S2:{p:'docs/01-architecture/', dir:true},
+  S3:{p:'docs/',                 dir:true},
+  S4:{p:'docs/',                 dir:true},
+  S5:{p:'docs/',                 dir:true},
+  S6:{p:'docs/',                 dir:true},
+  S7:{p:'docs/',                 dir:true}
+};
+
+function artifactRow(f){
+  const p = (f && f.path) ? f.path : '';
+  if(!p) return '';
+  const sm = (f && f.summary) ? esc(f.summary) : '';
+  return `<div class="art-row">
+    <button class="art-link" onclick="openArtifact('${encodeURIComponent(p)}')" title="${esc(p)}">${esc(p)}</button>
+    ${sm?`<span class="art-sum">${sm}</span>`:''}
+  </div>`;
+}
+
+function taskArtsBody(t){
+  // 有 artifacts 字段（新后端）：数组渲染条目，空数组 = 未 finish 的空态
+  if(Array.isArray(t.artifacts)){
+    return t.artifacts.length
+      ? t.artifacts.map(artifactRow).join('')
+      : '<div class="art-empty">该节点暂无交付工件</div>';
+  }
+  // 无 artifacts 字段（历史任务/老快照）：按 phase 走 09 §3.1 兜底映射
+  const fb = PHASE_FALLBACK[t.phase];
+  if(!fb) return '<div class="art-empty">无工件记录</div>';
+  return `<div class="art-empty">无工件记录 —— 历史任务无结构化工件记录</div>
+    <div class="art-row"><button class="art-link"
+      onclick="openArtifact('${encodeURIComponent(fb.p)}')">${esc(fb.p)}</button></div>
+    ${fb.dir?'<div class="art-note">历史任务无结构化工件记录，此为该阶段约定产出目录，可能含非本任务文件</div>':''}`;
+}
+
+function toggleTask(tid, btn){
+  const card = btn.closest('.task-card');
+  const bodyEl = card ? card.querySelector('.tk-arts') : null;
+  if(!bodyEl) return;
+  const on = !openTasks.has(tid);
+  if(on) openTasks.add(tid); else openTasks.delete(tid);
+  bodyEl.style.display = on ? '' : 'none';
+  btn.classList.toggle('open', on);
+}
+
+function renderTasks(){
+  const ts = Object.values(state.tasks||{});
+  if(!ts.length){ $('tasks').innerHTML = '<div class="empty">暂无任务</div>'; return; }
+  const byPhase = {};
+  ts.forEach(t=>(byPhase[t.phase||'—']=byPhase[t.phase||'—']||[]).push(t));
+  $('tasks').innerHTML = Object.entries(byPhase).map(([ph,list])=>`
+    <div style="margin-bottom:8px">
+      <div style="font-size:10.5px;color:var(--tx3);margin-bottom:4px">${esc(ph)}</div>
+      ${list.map(t=>{
+        const ag = state.agents.find(a=>a.id===t.agent);
+        const c = ag?ag.color:'#888780';
+        const tid = String(t.id || t.task_id || (t.phase||'')+'|'+(t.agent||'')+'|'+(t.title||''));
+        const open = openTasks.has(tid);
+        const tidAttr = esc(tid).replace(/'/g,'&#39;');
+        const tipT = [
+          `任务：${t.title||t.id||'—'}`,
+          `状态：${t.status||'—'}　进度：${t.progress}%`,
+          `执行者：${ag?ag.name:(t.agent||'—')}${ag&&ag.runtime_model?`（${ag.runtime_model}）`:''}`,
+          `阶段：${t.phase||'—'}`,
+          `工件：${(t.artifacts||[]).length} 件`,
+          t.steps ? `最后步骤：${t.steps}` : null,
+          `创建：${t.created||'—'}　更新：${t.updated||'—'}`
+        ].filter(Boolean).join('\n');
+        return `<div class="tk task-card" title="${esc(tipT)}">
+          <div class="tk-t">
+            <button class="tarrow${open?' open':''}" title="${open?'收起工件清单':'展开工件清单; ' + esc(tipT)}"
+              onclick="toggleTask('${tidAttr}', this)" aria-expanded="${open}">▶</button>
+            <b>${esc(t.title)}</b><i>${t.progress}%</i>
+          </div>
+          <div class="bar"><i style="width:${t.progress}%;background:${c}"></i></div>
+          <div class="tk-arts"${open?'':' style="display:none"'}>${taskArtsBody(t)}</div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+/* 对话轮次柱状图：spawn/resume 各计一轮，无记录时回退 agent.rounds */
+function renderRounds(){
+  const box = $('roundBody'); if(!box) return;
+  if(!state){ box.innerHTML='<div class="skel" style="width:60%"></div>'; return; }
+  // v3.8：口径改为「对话交互条数」——子 agent 每次上报/发言/交付/心跳计 1。
+  // 它与模型的真实对话轮次（Agent 进程内部）平台才可见，这里是可观测的代理口径。
+  const ALIAS = {'frontend':'frontend-dev','backend':'backend-dev','pm':'product-manager'};
+  const nmOf = id => (state.agents.find(x=>x.id===id)
+    || {name:({'frontend-dev':'前端开发','backend-dev':'后端开发'})[id]||id,
+        short:({'frontend-dev':'前','backend-dev':'后'})[id]||'·',
+        color:'#888'});
+  const cnt = {};
+  (state.events||[]).forEach(e=>{
+    if(['progress','say','finish','remember','heartbeat'].includes(e.kind)){
+      const k = ALIAS[e.agent]||e.agent;
+      cnt[k]=(cnt[k]||0)+1;
+    }});
+  const rows = Object.keys(cnt).map(id=>({a:nmOf(id), n:cnt[id]}))
+    .sort((x,y)=>y.n-x.n);
+  if(!rows.length){
+    box.innerHTML = '<div class="tok-empty" style="padding:4px 0">暂无交互记录</div>';
+    return;
+  }
+  const max = Math.max(1, ...rows.map(r=>r.n));
+  box.innerHTML = rows.map(r=>`
+    <div class="hbar" title="${esc(r.a.name||'')}：${r.n} 次交互（每次汇报/发言/交付/心跳计 1）">
+      <span class="hb-nm">${esc(r.a.short||'·')} ${esc(r.a.name||'')}</span>
+      <span class="hb-track"><span class="hb-fill"
+        style="width:${r.n/max*100}%;background:${r.a.color||'#888'}"></span></span>
+      <span class="hb-vl">${r.n}</span>
+    </div>`).join('');
+}
+
+function renderHeat(){
+  const el = $('heat');
+  if(!el || !state) return;   // 发言热度已由 Token 面板取代；DOM 缺失时静默跳过
+  const cnt = {};
+  state.messages.forEach(m=>{ if(m.from!=='__sys__') cnt[m.from]=(cnt[m.from]||0)+1; });
+  const max = Math.max(1, ...Object.values(cnt));
+  $('heat').innerHTML = state.agents.map(a=>{
+    const n = cnt[a.id]||0;
+    return `<div class="heat"><i>${a.short}</i>
+      <div><span style="width:${n/max*100}%;background:${a.color}"></span></div>
+      <u>${n}</u></div>`;
+  }).join('');
+}
+
+function renderFiles(){
+  const el = $('files');
+  if(!artifacts.length){ el.innerHTML='<div class="empty">暂无工件</div>'; return; }
+  el.innerHTML = artifacts.slice(-40).map(f=>
+    `<div class="file" onclick="openFile('${f.path}')">${esc(f.name)}<em>${kb(f.bytes)}</em></div>`).join('');
+}
+
+function setFilter(id){ filter = (filter===id?null:id); sig=''; render(); }
+
+async function openFile(p){
+  try{
+    const r = await fetch('/api/artifact?path='+encodeURIComponent(p));
+    const d = await r.json();
+    $('mTitle').textContent = d.path;
+    $('mBody').textContent = d.content || '(空文件)';
+    $('mFoot').textContent = '';
+    $('modal').classList.add('on');
+  }catch(e){}
+}
+
+/* ---------- Token 计量区块（07 §3 四态） ----------
+   数据 = GET /api/state 新增的 state.tokens / state.tokens_error（09 §2），
+   零新增网络请求；字段缺失（老快照）一律走空态/占位，不报错。 */
+
+/* 数字显示统一规则（07 §3）：取整；≥1 万显示 k；>1e9 显示科学计数 */
+function fmtTok(n){
+  n = Number(n)||0;
+  if(n>=1e9) return (n/1e9).toFixed(1)+'e+9';
+  if(n>=10000) return (n/1000).toFixed(1)+'k';
+  return String(Math.round(n));
+}
+/* 成本分档（07 §3 R-1）：≥$0.01 两位小数，<$0.01 四位小数，
+   保证任意两个角色的成本数字可区分 */
+function fmtCost(c){
+  c = Number(c)||0;
+  return '$' + (c>=0.01 ? c.toFixed(2) : c.toFixed(4));
+}
+
+function retryTokens(){ sig=''; poll(); }
+
+function renderTokens(){
+  const body = $('tokBody'); if(!body) return;
+  $('tokMeta').textContent = '';
+  // 加载态：整页快照未到（首帧骨架灰条 ×7）
+  if(!state){
+    body.innerHTML = Array.from({length:7},()=>
+      '<div class="skel" style="width:60%"></div>').join('');
+    return;
+  }
+  // 错误态：后端声明账本读取失败（区别于零记账，tokens_error 定稿保留）
+  if(state.tokens_error){
+    body.innerHTML = `<div class="tok-err">计量数据读取失败：${esc(state.tokens_error)}
+      <button class="btn" onclick="retryTokens()">重试</button></div>`;
+    return;
+  }
+  const t = state.tokens;
+  // 空态：null（项目零记账）或字段缺失（老快照，防御式），保留容器高度
+  if(!t || typeof t!=='object' || !t.agents || typeof t.agents!=='object'){
+    body.innerHTML = '<div class="tok-empty">暂无计量数据 —— 账本在子 agent 上报后生成</div>';
+    return;
+  }
+  // 成功态：合计 + 条形 ×N（按 total_tokens 降序，0 长度条也保留行）
+  const rows = Object.keys(t.agents).map(id=>
+    Object.assign({id}, (t.agents[id]&&typeof t.agents[id]==='object')?t.agents[id]:{}));
+  rows.sort((a,b)=>(Number(b.total_tokens)||0)-(Number(a.total_tokens)||0));
+  const max = Math.max(1, ...rows.map(r=>Number(r.total_tokens)||0));
+  // V-2：标定提示补全（19-pm-acceptance）——含义直观 + 指明校准入口，防御式取值
+  $('tokMeta').textContent =
+    '单价表 ' + (t.price_version||'—')
+    + ' · 标定系数 ' + (t.calibration!=null ? t.calibration : '—')
+    + ' · 数字为估算（校准入口：runtime/projects/price-table.json）';
+  body.innerHTML =
+    `<div class="tok-sum">合计 <b>${fmtTok(t.total_tokens)}</b> tokens
+      · 成本 ≈<b>${fmtCost(t.total_cost_usd)}</b>${
+      t.has_unpriced ? ' <span class="tok-unpriced">存在未定价角色</span>' : ''}</div>`
+    + rows.map((r,i)=>{
+      const nm = AG_NAMES[r.id]||r.id;
+      const w = Math.round((Number(r.total_tokens)||0)/max*100);
+      const costTxt = r.unpriced
+        ? '<span class="tok-unpriced">未定价</span>'
+        : '≈'+fmtCost(r.cost_usd);
+      return `<div class="hbar${i===0?' top1':''}" title="${esc(nm)}（${esc(r.id)}）">
+        <span class="hb-nm">${esc(nm)}</span>
+        <span class="hb-track"><span class="hb-fill" style="width:${w}%"></span></span>
+        <span class="hb-val">${fmtTok(r.total_tokens)} · ${costTxt}</span>
+      </div>`;
+    }).join('');
+}
+
+/* L3 工件全文弹层：复用 openFile 弹层模式，head=30 截断（09 §5），
+   缺失/越界/网络错误分文案，重试 = 重发同一请求 */
+let artModalSeq = 0;
+function isPathEscaped(p){
+  return !p || p.includes('..') || p.startsWith('/') || p.startsWith('\\')
+    || /^[a-zA-Z]:/.test(p);
+}
+async function openArtifact(pEnc){
+  const p = decodeURIComponent(pEnc);
+  const seq = ++artModalSeq;
+  $('mTitle').textContent = p;
+  $('mBody').textContent = '加载中…';
+  $('mFoot').textContent = '';
+  $('modal').classList.add('on');
+  try{
+    const r = await fetch('/api/artifact?path='+encodeURIComponent(p)+'&head=30');
+    if(seq!==artModalSeq) return;   // 已有更新的打开请求，丢弃过期响应
+    const d = await r.json();
+    if(d && d.error){
+      if(isPathEscaped(p)){
+        $('mTitle').textContent = '路径越界';
+        $('mBody').textContent = '路径不在项目工作区内：'+p+'\n\n已拒绝读取，不给内容。';
+      }else{
+        $('mTitle').textContent = '文件缺失：'+p;
+        $('mBody').textContent = '文件缺失：'+p
+          +'\n\n该工件登记了路径，但磁盘上读取不到（可能已被移动或删除）。\n请与该节点的执行 agent 核对，或检查工作区路径。';
+      }
+      $('mFoot').textContent = '读取失败 · ' + (d.error);
+      return;
+    }
+    $('mTitle').textContent = d.path || p;
+    $('mBody').textContent = (d.content && d.content.length) ? d.content : '(空文件)';
+    if(d.truncated){
+      $('mFoot').textContent = '已截断：仅前 '
+        + (d.total_lines!=null ? Math.min(30, d.total_lines) : 30)
+        + ' 行 / 共 ' + (d.total_lines!=null ? d.total_lines : '?')
+        + ' 行 · ' + kb(d.bytes||0);
+    }else if(d.total_lines!=null){
+      $('mFoot').textContent = '共 ' + d.total_lines + ' 行 · ' + kb(d.bytes||0);
+    }else{
+      $('mFoot').textContent = '';
+    }
+  }catch(e){
+    if(seq!==artModalSeq) return;
+    $('mTitle').textContent = '读取失败';
+    $('mBody').textContent = '工件全文读取失败：'+p
+      +'\n\n'+((e&&e.message)||'网络错误');
+    $('mFoot').innerHTML = '<button class="btn" onclick="openArtifact(\''+pEnc+'\')">重试</button>';
+  }
+}
+$('mClose').onclick = ()=>$('modal').classList.remove('on');
+$('modal').onclick = e=>{ if(e.target.id==='modal') $('modal').classList.remove('on'); };
+$('pmClose').onclick = ()=>$('pmodal').classList.remove('on');
+$('pmodal').onclick = e=>{ if(e.target.id==='pmodal') $('pmodal').classList.remove('on'); };
+
+/* ---------- 设置面板：项目与模型 ---------- */
+async function post(path, body){
+  try{
+    const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'},
+                                 body: JSON.stringify(body||{})});
+    return r.json();
+  }catch(e){
+    /* 网络层失败（连接被重置/服务重启中）：不能静默吞掉，否则用户点了发送毫无反馈 */
+    uiToast('看板服务请求失败，可能正在重启，请稍候刷新重试', true);
+    return {error:'network'};
+  }
+}
+
+function renderProjects(){
+  const box = $('projList');
+  if(!box || !state) return;
+  const list = (state.projects || {}).list || [];
+  if(!list.length){ box.innerHTML = '<div class="empty">暂无项目</div>'; return; }
+  box.innerHTML = list.map(p=>`<div class="pitem ${p.id===state.project?'on':''}"
+      onclick="switchProject('${p.id}')" title="${esc(p.name)}（${esc(p.id)}）">
+    <div class="pt"><b title="${esc(p.name)}">${esc(p.name)}</b>
+      <span class="del" onclick="event.stopPropagation();delProject('${p.id}')">删除</span></div>
+    <i title="消息 ${p.messages}（留言） · 动态 ${p.events||0}（含汇报/派发/交付）"><span>${p.phase} · 消息 ${p.messages} · 动态 ${p.events||0}</span>
+      ${p.active ? '<span class="pdot" title="有 agent 正在工作"></span>' : ''}</i>
+  </div>`).join('');
+}
+
+function toggleNewProj(){
+  const b = $('newProjBox');
+  b.style.display = (b.style.display === 'none') ? 'block' : 'none';
+  if(b.style.display === 'block') $('npId').focus();
+}
+
+function openSettings(){
+  renderSettings(true);
+  $('smodal').classList.add('on');
+}
+
+/* 模型选择：下拉选内置模型直接保存；选「手动输入」时展开文本框，保留手填能力 */
+function modelPick(id, sel){
+  const inp = $('mcustom-'+id);
+  if(!inp) return;
+  if(sel.value === '__custom__'){ inp.style.display='block'; inp.focus(); }
+  else { inp.style.display='none'; setCfg(id,'model_id',sel.value); }
+}
+
+let _setSig = '';
+function renderSettings(force){
+  const el = $('sbody');
+  if(!state) return;
+  // 防打断：1.2s 轮询重绘会把展开中的下拉/正在输入的文本框整个销毁。
+  // 焦点还在面板内时（含下拉展开态）跳过本轮重绘，等用户点别处再刷新。
+  if(!force && el.contains(document.activeElement)) return;
+  const tiers = state.model_tiers || {};
+  const provs = state.providers || {};
+  const ams = state.available_models || [];
+  // 数据签名：档位/供应商/模型列表/各角色配置都没变时，不重建面板（防下拉闪断）
+  const sig = JSON.stringify([tiers,provs,ams,
+    (state.agents||[]).map(a=>[a.id,a.model,a.model_id,a.provider,(a.params||{}).temperature])]);
+  if(!force && sig===_setSig) return;
+  _setSig = sig;
+  const ml = $('modelList');
+  if(ml) ml.innerHTML = ams.map(m=>`<option value="${esc(m.id)}">${esc(m.note||'')}</option>`).join('');
+  const cur = ((state.projects||{}).list||[]).find(p=>p.id===state.project) || {};
+  el.innerHTML =
+    `<div style="font-size:11px;color:var(--tx3);margin-bottom:11px;line-height:1.75">
+       正在配置：<b style="color:var(--tx2)">${esc(cur.name || state.project)}</b>
+       （${esc(state.project||'')}），按项目独立保存。<br>
+       <b style="color:var(--amber,#BA7517)">档位与模型名都按项目独立保存、下次派发生效</b>；
+       档位为三档（reasoning/default/lite），项目也可直接指定具体模型名（显示为「当前：…」）。
+       供应商字段为预留，接入对应 API key 后生效。
+       正在运行的 agent 不会中途换模型，下次派发生效。
+     </div>` +
+    state.agents.map(a=>{
+      // v3.7：把「生效模型」显式算出来——model_id（具体模型名）优先于 model（档位）
+      const mid = (a.model_id||'').trim(), tier = (a.model||'').trim();
+      const byId = !!mid;
+      const eff = mid || tier || 'default';
+      const isTier = ['reasoning','default','lite'].includes(tier);
+      return `<div class="mrow2">
+      <div class="av" style="background:${a.color}">${a.short}</div>
+      <div class="mcfg">
+        <div class="r1"><b>${a.name}</b>
+          <select title="模型档位（选它会清掉模型名覆盖，档位才生效）"
+                  onchange="setModel('${a.id}', this.value)">
+            ${['reasoning','default','lite'].map(m=>
+              `<option value="${m}" ${(!byId && tier===m)?'selected':''}>${m}</option>`).join('')}
+            ${byId
+              ? `<option value="__eff__" selected style="font-weight:600">当前生效：${esc(mid)}（模型名·覆盖档位）</option>`
+              : (tier && !isTier
+                 ? `<option value="${esc(tier)}" selected style="font-weight:600">当前：${esc(tier)}（项目自定）</option>`
+                 : '')}
+          </select>
+        </div>
+        <div class="r2">
+          <select title="供应商" onchange="setCfg('${a.id}','provider',this.value)">
+            ${Object.keys(provs).map(k=>
+              `<option value="${k}" ${a.provider===k?'selected':''}>${k}</option>`).join('')}
+          </select>
+          <select title="模型（选择或切手动输入）" style="flex:1;min-width:0"
+                  onchange="modelPick('${a.id}',this)">
+            <option value="">（用档位默认）</option>
+            ${ams.map(m=>`<option value="${esc(m.id)}" ${a.model_id===m.id?'selected':''}>
+              ${esc(m.id)}${m.note?' · '+esc(m.note):''}</option>`).join('')}
+            <option value="__custom__" ${a.model_id && !ams.some(m=>m.id===a.model_id)?'selected':''}>✎ 手动输入…</option>
+          </select>
+          <input id="mcustom-${a.id}" value="${esc(a.model_id||'')}" placeholder="手填模型名，回车保存"
+                 style="flex:1;min-width:0;display:${a.model_id && !ams.some(m=>m.id===a.model_id)?'block':'none'}"
+                 onchange="setCfg('${a.id}','model_id',this.value)">
+          <input value="${(a.params && a.params.temperature!=null) ? a.params.temperature : ''}"
+                 placeholder="temperature" style="width:92px"
+                 onchange="setCfg('${a.id}','temperature',this.value)">
+        </div>
+        <i>${esc(a.desc)}</i>
+        <div style="font-size:10.5px;color:var(--tx3);margin-top:2px">
+          生效模型：<b style="color:${byId?'#0F6E56':'var(--tx2)'}">${esc(eff)}</b>
+          （${byId?'模型名覆盖档位':(isTier?'来自档位':'项目自定')}；下次派发生效）
+          ${(a.fallback && a.fallback.length)
+            ? `<br>降级链：${a.fallback.map(esc).join(' → ')}（额度耗尽/不可用时按序换下一个，只顺延一次）` : ''}
+        </div>
+      </div>
+    </div>`;}).join('') +
+    `<div class="hint">${Object.entries(tiers).map(([k,v])=>
+        `<div><b>${k}</b> — ${esc(v)}</div>`).join('')}
+       <div style="margin-top:8px">${Object.entries(provs).map(([k,v])=>
+        `<div><b>${k}</b> — ${esc(v)}</div>`).join('')}</div>
+       <div style="margin-top:10px;border-top:1px dashed var(--line);padding-top:8px">
+         <b>怎么真正生效？</b>配置存在项目 <code>registry.json</code>；派发时<b>主 Agent 读它</b>，
+         把生效模型作为 <code>model</code> 参数传给 Agent 工具。命令行核对：
+         <code>python runtime/cli.py models --project ${esc(state.project||'')}</code>
+         <button class="btn" style="margin-left:6px" onclick="copyModels()">复制派发参数</button>
+       </div>
+     </div>`;
+}
+
+async function switchProject(id){
+  await post('/api/projects/switch', {id});
+  curProj = id; sig = ''; filter = null;
+  await poll();
+}
+
+/* ---------- 自建确认框 / 提示条 ----------
+   不用原生 confirm()/alert()：在内嵌预览与 iframe 里它们常被静默拦截（直接返回 false），
+   表现就是"点了删除没反应"。 */
+function uiConfirm(msg){
+  return new Promise(resolve=>{
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:absolute;left:0;top:0;right:0;bottom:0;'
+      + 'background:rgba(44,44,42,.30);display:flex;align-items:center;'
+      + 'justify-content:center;z-index:90';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--panel);border:1px solid var(--line);'
+      + 'border-radius:14px;padding:16px 18px;max-width:330px;'
+      + 'box-shadow:0 10px 30px rgba(0,0,0,.18)';
+    card.innerHTML = '<div style="font-size:12.5px;line-height:1.65;color:var(--tx);'
+      + 'white-space:pre-wrap"></div>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">'
+      + '<button class="btn" data-no>取消</button>'
+      + '<button class="btn danger" data-yes>确定删除</button></div>';
+    card.firstChild.textContent = msg;
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+    const done = v=>{ ov.remove(); resolve(v); };
+    card.querySelector('[data-no]').onclick = ()=>done(false);
+    card.querySelector('[data-yes]').onclick = ()=>done(true);
+    ov.onclick = e=>{ if(e.target === ov) done(false); };
+  });
+}
+
+function uiToast(msg, bad){
+  const t = document.createElement('div');
+  t.style.cssText = 'position:absolute;left:50%;top:14px;transform:translateX(-50%);'
+    + 'padding:7px 14px;border-radius:8px;font-size:12px;z-index:95;'
+    + 'box-shadow:0 4px 14px rgba(0,0,0,.10);border:1px solid '
+    + (bad ? '#F7C1C1' : '#C0DD97') + ';background:' + (bad ? '#FCEBEB' : '#EAF3DE')
+    + ';color:' + (bad ? '#A32D2D' : '#3B6D11');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+
+async function delProject(id){
+  const yes = await uiConfirm('删除项目「'+id+'」？\n\n该项目的全部消息、任务与 agent 记忆将一并删除，不可恢复。');
+  if(!yes) return;
+  const r = await post('/api/projects', {action:'delete', id});
+  if(r && r.error){ uiToast(r.error, true); return; }
+  /* 删掉的若是当前项目，服务端会把 current 切到剩下第一个；前端必须跟着切，
+     否则会继续拿已删除的项目 id 去轮询，看板永远空着 */
+  curProj = (r && r.current) || null;
+  sig = ''; filter = null;
+  uiToast('已删除项目「'+id+'」');
+  await poll();
+}
+
+async function createProject(){
+  const id = $('npId').value.trim();
+  if(!id){ uiToast('请填写项目 ID（英文、数字、下划线）', true); return; }
+  const r = await post('/api/projects',
+    {id, name: $('npName').value.trim() || id, brief: $('npBrief').value.trim()});
+  if(r.error){ uiToast(r.error, true); return; }
+  $('npId').value = $('npName').value = $('npBrief').value = '';
+  $('newProjBox').style.display = 'none';
+  curProj = id; sig = ''; filter = null;
+  await poll();
+}
+
+/* 设置生效反馈：改完立刻回执，并说明「下次派发生效」（v3.6） */
+function setToast(agentId, text){
+  const el = $('setToast');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.add('on');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(()=>el.classList.remove('on'), 2600);
+}
+
+async function setModel(agent, model){
+  if(model === '__eff__') return;   // 选中「当前生效」占位项：不动作
+  // v3.7：选档位时**顺手清掉模型名覆盖**，否则 model_id 优先后档位永远不生效（"设了没反应"）
+  const r = await post('/api/settings/model',
+    {agent, model, model_id: '', project: curProj});
+  if(r && r.ok === false) setToast(agent, '✗ 保存失败：' + (r.error || '未知错误'));
+  else setToast(agent, `✓ 已保存：${agent} → 档位 ${model}（已清空模型名覆盖，下次派发生效）`);
+  await poll();
+}
+
+async function setCfg(agent, key, val){
+  const body = {agent, project: curProj};
+  if(key === 'provider') body.provider = val;
+  else if(key === 'model_id') body.model_id = val;
+  else if(key === 'temperature')
+    body.params = {temperature: (val === '' ? null : parseFloat(val))};
+  const r = await post('/api/settings/model', body);
+  if(r && r.ok === false) setToast(agent, '✗ 保存失败：' + (r.error || '未知错误'));
+  else setToast(agent, `✓ 已保存：${agent} 的 ${key} = ${val === '' ? '(清空)' : val}（下次派发生效）`);
+  await poll();
+}
+
+/* 复制派发参数：主 Agent 派发前跑 `cli.py models`，或直接粘这份 */
+function copyModels(){
+  const rows = (state.agents||[]).filter(a=>a.id!=='orchestrator').map(a=>{
+    const eff = (a.model_id||'').trim() || (a.model||'').trim() || 'default';
+    return `${a.id}\tmodel=${eff}`;
+  }).join('\n');
+  const txt = `【项目 ${state.project} 各角色生效模型｜派发时传给 Agent 工具的 model 参数】\n${rows}`;
+  navigator.clipboard.writeText(txt).then(
+    ()=>setToast('', '✓ 派发参数已复制，粘给主 Agent 或直接用于派发'),
+    ()=>setToast('', '✗ 复制失败，请手动运行：python runtime/cli.py models'));
+}
+
+$('sClose').onclick = ()=>$('smodal').classList.remove('on');
+$('smodal').onclick = e=>{ if(e.target.id==='smodal') $('smodal').classList.remove('on'); };
+
+poll();
+setInterval(poll, 1200);
+</script>
+</body>
+</html>

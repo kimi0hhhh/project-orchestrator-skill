@@ -1,0 +1,118 @@
+{
+  "agents": [
+    {
+      "id": "product-manager",
+      "name": "产品经理",
+      "short": "产",
+      "color": "#4C8DFF",
+      "desc": "用户的翻译官：需求/PRD/UI/终验",
+      "model": "GLM-5.3-Flash"
+    },
+    {
+      "id": "architect",
+      "name": "架构师",
+      "short": "架",
+      "color": "#9B6EF3",
+      "desc": "架构设计与接口契约，与 PM 会签",
+      "model": "Deepseek-V4-Pro"
+    },
+    {
+      "id": "frontend-dev",
+      "name": "前端开发",
+      "short": "前",
+      "color": "#2FB380",
+      "desc": "看板 UI 与交互实现",
+      "model": "Kimi-K3"
+    },
+    {
+      "id": "backend-dev",
+      "name": "后端开发",
+      "short": "后",
+      "color": "#E6A23C",
+      "desc": "runtime 逻辑与 API 实现",
+      "model": "GLM-5.3-Flash"
+    },
+    {
+      "id": "dev-lead",
+      "name": "开发组长",
+      "short": "组",
+      "color": "#C0392B",
+      "desc": "集成评审、缺陷分流、收口",
+      "model": "Hy4 preview"
+    },
+    {
+      "id": "qa",
+      "name": "测试工程师",
+      "short": "测",
+      "color": "#16A085",
+      "desc": "测试计划/执行/缺陷登记",
+      "model": "GLM-5.3-Flash"
+    }
+  ],
+  "phases": [
+    {
+      "id": "S0",
+      "name": "立项"
+    },
+    {
+      "id": "S1",
+      "name": "需求"
+    },
+    {
+      "id": "S2",
+      "name": "架构"
+    },
+    {
+      "id": "S3",
+      "name": "开发"
+    },
+    {
+      "id": "S4",
+      "name": "集成"
+    },
+    {
+      "id": "S5",
+      "name": "测试"
+    },
+    {
+      "id": "S6",
+      "name": "终验"
+    },
+    {
+      "id": "S7",
+      "name": "交付"
+    }
+  ],
+  "model_tiers": {
+    "reasoning": "最强档 · Deepseek-V4-Pro · 架构/会签等重决策",
+    "default": "标准档 · Deepseek-V4.1-Flash · 日常开发主力",
+    "lite": "轻量档 · GLM-5.3-Flash · 上报/简单任务"
+  },
+  "providers": {
+    "workbuddy": "WorkBuddy 内置（档位路由，当前生效）",
+    "deepseek": "DeepSeek 直连（预留，需 API key）",
+    "kimi": "Kimi 直连（预留，需 API key）"
+  },
+  "available_models": [
+    {
+      "id": "Deepseek-V4.1-Flash",
+      "note": "标准档主力"
+    },
+    {
+      "id": "Deepseek-V4-Pro",
+      "note": "重决策"
+    },
+    {
+      "id": "GLM-5.3-Flash",
+      "note": "轻量快速"
+    },
+    {
+      "id": "Kimi-K3",
+      "note": "前端向"
+    },
+    {
+      "id": "Hy4 preview",
+      "note": "评审向"
+    }
+  ]
+}
