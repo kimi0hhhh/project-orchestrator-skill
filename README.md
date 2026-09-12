@@ -134,6 +134,8 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 ```
 ├── SKILL.md            # 框架本体：编排协议 + 流程纪律（安装到 ~/.zcode/skills/project-orchestrator/）
 ├── agents/             # 6 份角色契约（安装到 ~/.zcode/agents/）
+├── universal/          # 通用版：平台无关协议 + 三档能力适配（PORTING.md 含自举移植提示词）
+├── tools/              # 契约构建脚本（build_universal.py：源契约 → 平台无关契约）
 ├── runtime/            # 协作运行时（随 install 安装到 ~/.zcode/skills/project-orchestrator/runtime/）
 │   ├── server.py / daemon.py / cli.py   # 看板服务、守护进程、子 agent 上报 CLI
 │   ├── lib/store.py    # 状态存储 + 消息总线 + 看门狗（存活判定/中断/续跑）
@@ -155,10 +157,11 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 
 ## Roadmap
 
-> Changelog：v4.0（ZCode 版，前两个先行实现之一，本仓库）已发布。
+> Changelog：v4.0（ZCode 版开源）已发布；v4.1（关键路径重叠、变更分诊、runtime 收编、通用版）已发布。
 
+- [x] **通用版**（`universal/`，平台无关协议 + 三档能力适配 + 自举移植提示词）——任何 agent 工具的开发者按 [universal/PORTING.md](universal/PORTING.md) 移植，30–60 分钟完成
 - [ ] OpenCode 版（前两个先行实现之二，契约模板与阶段定义同源复用）
-- [ ] 通用版（平台无关的框架描述 + 适配层）
+- [ ] 看门狗证据链加固（pid 登记 / 文件活动兜底 / stalled 宽限，ZCode 实测 17 次误报待修）
 
 详见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
