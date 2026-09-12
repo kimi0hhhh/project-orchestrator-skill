@@ -30,7 +30,16 @@
 - **每阶段一道门禁**：PASS / CONCERN / FAIL 判定，CONCERN 必须登记未决项；
 - **两个进阶机制（研究依据支撑）**：**星形参谋**——只读参谋一轮挑刺（Cognition 的 generator–verifier 形态）；**动态编制 L0–L2**——简单任务不加人，不把多智能体 15× token（研究任务实测）的成本烧在简单任务上。
 
-框架与平台解耦：换一个宿主工具，换的是适配层，不是框架。ZCode 版已发布；OpenCode 版共享同一套契约模板与阶段定义，无需重写。
+框架与平台解耦：换一个宿主工具，换的是适配层，不是框架。
+
+**版本家族**（一个协议，四个实现，差异对照见 [docs/VERSIONS.md](docs/VERSIONS.md)）：
+
+| 实现 | 版本 | 一句话 |
+|---|---|---|
+| ZCode 版（本仓库根目录） | v4.1 | 先行实现，协议最完整参考，开箱即装 |
+| [universal/](universal/README.md) 通用版 | v4.1 | 平台无关母版：8 项原语映射 + A/B/C 三档适配 + 自举移植提示词 |
+| [opencode/](opencode/README.md) OpenCode 版 | v4.1 | task 工具体系 + 5 个斜杠命令，14 条机制移植 |
+| [workbuddy/](workbuddy/README.md) WorkBuddy 版 | v4.2 | 深度适配：原生 teams/tasks/台账优先，自建仅剩看板/门禁/契约 |
 
 ## 快速开始
 
