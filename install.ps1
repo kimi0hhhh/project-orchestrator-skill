@@ -10,11 +10,19 @@ Write-Host "[1/3] 安装 skill -> $SkillDir"
 New-Item -ItemType Directory -Force -Path $SkillDir | Out-Null
 Copy-Item (Join-Path $Src "SKILL.md") (Join-Path $SkillDir "SKILL.md") -Force
 
-Write-Host "[2/3] 安装角色契约 -> $AgentsDir"
+Write-Host "[2/4] 安装角色契约 -> $AgentsDir"
 New-Item -ItemType Directory -Force -Path $AgentsDir | Out-Null
 Copy-Item (Join-Path $Src "agents\*.md") $AgentsDir -Force
 
-Write-Host "[3/3] 完成。"
+Write-Host "[3/4] 安装协作运行时（看板/账本/看门狗） -> $SkillDir\runtime"
+New-Item -ItemType Directory -Force -Path (Join-Path $SkillDir "runtime") | Out-Null
+Copy-Item (Join-Path $Src "runtime\*.py") (Join-Path $SkillDir "runtime") -Force
+Copy-Item (Join-Path $Src "runtime\lib") (Join-Path $SkillDir "runtime\lib") -Recurse -Force
+Copy-Item (Join-Path $Src "runtime\ui") (Join-Path $SkillDir "runtime\ui") -Recurse -Force
+Get-ChildItem -Path (Join-Path $SkillDir "runtime") -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+Write-Host "[4/4] 完成。"
 Write-Host "  - 重启 ZCode 会话（角色清单在会话启动时加载）"
 Write-Host "  - 新会话里说「启动主 Agent」即可唤醒编排模式"
+Write-Host "  - 看板：在项目工作区跑 python $SkillDir\runtime\daemon.py 8788"
 Write-Host "  - 可选：安装 pm-skills / Matt Pocock skill 集以获得完整 skill 引用（见 docs/CREDITS.md）"

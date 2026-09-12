@@ -1,6 +1,10 @@
-# Project Orchestrator · 面向 Agent 开发工具的多 Agent 协作编排协议
+# Project Orchestrator · 多 Agent 协作开发框架
 
-**一句话**：一套「项目负责人 + 6 单责角色 + 按需参谋 + 阶段门禁」的编排协议——主 Agent 不下场干活，只做派发、验收、放行；单写手、单层编排、只读参谋、门禁不放水。它不是某个工具的专属玩法，而是为任何具备子 agent 派发能力的 agent 开发工具设计的协作模式；**ZCode 与 OpenCode 是前两个先行实现**（本仓库先发布 ZCode 版）。交付以门禁验收为准，不承诺一次成型。
+![Project Orchestrator 框架横幅](docs/assets/banner.svg)
+
+![version](https://img.shields.io/badge/version-v4.1-green) ![stage](https://img.shields.io/badge/status-beta-blue) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white) ![platform](https://img.shields.io/badge/platform-ZCode%20%7C%20OpenCode-orange) ![license](https://img.shields.io/badge/license-MIT-red) ![evidence](https://img.shields.io/badge/dev_validated-2%20real%20products-8A2BE2)
+
+**一句话**：一套可安装的**多智能体交付框架**——「项目负责人 + 6 单责角色 + 按需参谋 + 阶段门禁」的编排协议，配 S0–S7 标准交付流程、实时可视化作战看板、全程可追溯的 token/事件账本。主 Agent 不下场干活，只做派发、验收、放行；单写手、单层编排、只读参谋、门禁不放水。它不绑定某个工具，而是面向任何具备子 agent 派发能力的 agent 开发工具；**ZCode 与 OpenCode 是前两个先行实现**（本仓库先发布 ZCode 版）。交付以门禁验收为准，不承诺一次成型。
 
 > 把需求说清楚、回答几个简短的追问，几小时后回来，一个完整的产品项目已经躺在电脑里：PRD、接口契约、可运行代码、测试报告，还有一间记录六个 agent 如何协作的作战室。当然，它比你亲自下场显著更慢——文末「诚实地说说优缺点」有一笔一笔的账。
 
@@ -10,14 +14,23 @@
 
 ## 这是什么
 
-不是提示词合集，是一份可安装的**编排协议**（1 份 skill + 6 份角色契约）。加载后主 Agent 像项目负责人一样工作：
+不是提示词合集，是一份可安装的**协作开发框架**，四层各司其职：
+
+| 层 | 内容 | 落点 |
+|---|---|---|
+| **协议** | 单写手、单层编排、只读参谋、门禁不放水——每条有 2025–2026 研究依据 | SKILL.md、docs/DESIGN.md |
+| **流程** | 6 份角色契约 + S0–S7 阶段状态机 + 参谋会回路 + 变更分诊（C0–C2 / L0–L2） | agents/、docs/ARCHITECTURE.md |
+| **可视化** | 实时作战看板：阶段进度、agent 卡片、协作消息流、作战地图 | runtime/（随 install 安装） |
+| **追溯** | token 账本（真实值优先读会话库）、事件总线、门禁留痕、retro 四问 | runtime/lib/、.zcode/state/ |
+
+框架加载后主 Agent 像项目负责人一样工作：
 
 - **只派发、只验收**：写代码、写文档、做决策全部派发给 6 个单责角色（产品经理/架构师/前端/后端/开发组长/测试），每个工件只有一个写手；
 - **流程强制**：S0 立项 → S1 需求 → S2 架构（接口契约 = 前后端唯一法律）→ S3 开发（文件隔离可并行）→ S4 集成 → S5 测试 → S6 终验 → S7 交付（三签缺一不交付）；
 - **每阶段一道门禁**：PASS / CONCERN / FAIL 判定，CONCERN 必须登记未决项；
-- **两个进阶机制（实验数据支撑）**：**星形参谋**——只读参谋一轮挑刺，三条件对照实验中 PRD 盲评 21→22.5、端到端 +13%；**动态编制 L0–L2**——简单任务不加人，不把多智能体 15× token（研究任务实测）的成本烧在简单任务上。
+- **两个进阶机制（研究依据支撑）**：**星形参谋**——只读参谋一轮挑刺（Cognition 的 generator–verifier 形态）；**动态编制 L0–L2**——简单任务不加人，不把多智能体 15× token（研究任务实测）的成本烧在简单任务上。
 
-协议与平台解耦：换一个宿主工具，换的是适配层，不是协议。ZCode 版已发布；OpenCode 版共享同一套契约模板与阶段定义，无需重写。
+框架与平台解耦：换一个宿主工具，换的是适配层，不是框架。ZCode 版已发布；OpenCode 版共享同一套契约模板与阶段定义，无需重写。
 
 ## 快速开始
 
@@ -43,25 +56,38 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 
 ## 站在谁的肩膀上
 
-这套协议不是拍脑袋，是 2025–2026 多智能体研究的一次工程化收敛。每条都写清：核心发现 → 我们采纳了什么 / 在哪里持保留意见。
+这套框架的设计不是拍脑袋，是两股开源力量的收敛：**开源 skill 集**（方法论直接进角色契约）与 **2025–2026 多智能体研究**（每条写清：核心发现 → 我们采纳了什么 / 在哪里持保留意见）。
+
+### 开源 skill 引用
+
+角色契约为每个角色预置"推荐 skill 清单"，派发时由主 Agent 点名激活。框架**不打包、不修改**这些 skill，只声明引用与兼容——换你自己的等价 skill 也能跑：
+
+| skill 集 | 引用的 skill | 服务的角色 |
+|---|---|---|
+| [pm-skills](https://github.com/) | create-prd · prioritization-frameworks · pre-mortem · retro · user-stories · interview-script · user-personas · test-scenarios · dummy-dataset · sql-queries | 产品经理（S1/S6）· 测试（S5） |
+| [Matt Pocock skill 集](https://github.com/mattpocock/skills)（经 setup-matt-pocock-skills 安装） | codebase-design · domain-modeling · tdd · implement · prototype · code-review · triage · diagnosing-bugs · resolving-merge-conflicts · research · grill-with-docs | 架构师（S2）· 前后端（S3）· 开发组长（S4）· 会签调研 |
+
+完整引用关系与替换方式见 [docs/CREDITS.md](docs/CREDITS.md)。致谢这两个开源集的作者——本框架的角色方法论大量站在它们肩膀上。
+
+### 研究依据
 
 | 来源 | 核心发现 | 我们的取舍 |
 |---|---|---|
 | [Anthropic · How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system) | 多智能体约 **15× token**（研究任务实测）；编码任务真正可并行的部分远低于研究任务 | 采纳：默认不并行，仅 S3 文件隔离的前后端并行；派发前先分诊（L0–L2） |
 | [Anthropic · Agent Teams](https://code.claude.com/docs/en/agent-teams)（2026-02） | 3–5 teammates、禁嵌套、顺序/同文件工作回单会话 | 采纳：单层编排用契约 `tools` 白名单结构堵死，不靠提示词自觉 |
-| [Cognition · Don't Build Multi-Agents](https://cognition.com/blog/dont-build-multi-agents) | 并行写手交换的是彼此看不见的**隐含决策**，合并即冲突 | 采纳：每个工件单写手。修正：不退回单线程——用门禁 + 只读参谋保留多视角（端到端 +13%） |
+| [Cognition · Don't Build Multi-Agents](https://cognition.com/blog/dont-build-multi-agents) | 并行写手交换的是彼此看不见的**隐含决策**，合并即冲突 | 采纳：每个工件单写手。修正：不退回单线程——用门禁 + 只读参谋保留多视角 |
 | [Cognition · Multi-Agents: What's Actually Working](https://cognition.com/blog/multi-agents-working)（2026-04） | 生产中真正有效的是**零共享上下文的干净评审 agent** | 采纳：参谋互不对话、不写工件、不担门禁——"只读参谋"正是此形态 |
 | [LangChain · Benchmarking multi-agent architectures](https://www.langchain.com/blog/benchmarking-multi-agent-architectures) | supervisor 中继层是主要损失点，修复交接后 +50% | 采纳：只允许一层编排，主 Agent 中继时引用原文不改写 |
 | [Google · Towards a Science of Scaling Agent Systems](https://arxiv.org/abs/2512.08296) | 顺序任务上多智能体全线 **−39~70%** | 采纳：架构契约阶段（S0–S2）绝不并行；分诊拿不准就降档 |
 | [Dochkina · Drop the Hierarchy](https://arxiv.org/abs/2603.28990) | 预指派职级人设是负资产（自组织 +14%） | 采纳：参谋 prompt 只给"视角 + 挑战格式"，不写"首席/总监"剧本 |
-| [等预算对照研究](https://arxiv.org/abs/2604.02460) | 不锁 token 预算的对照，测到的是算力不是架构 | 采纳：复现指南强制等预算。保留意见：本仓库端到端对照未等预算（2.2× 成本），故 +13% 仅作方向性证据 |
+| [等预算对照研究](https://arxiv.org/abs/2604.02460) | 不锁 token 预算的对照，测到的是算力不是架构 | 采纳：复现指南强制等预算 |
 | [MAST 失败分类](https://arxiv.org/abs/2503.13657) | 7 个 SOTA 多智能体系统（含 MetaGPT/ChatDev 等 SDLC 框架）整体失败率 **41–86.7%** | 回应：承认本框架形似 SDLC 角色扮演，靠门禁判定、工件编号、契约↔代码对齐抽查与之切割 |
 
-一句话总结这九条研究的公共结论：**多智能体的失败几乎都发生在"写"的环节**——所以这套协议把并行限制在文件隔离的 S3，把"写"之外的一切（评审、挑战、观察）都做成只读。
+一句话总结这九条研究的公共结论：**多智能体的失败几乎都发生在"写"的环节**——所以这套框架把并行限制在文件隔离的 S3，把"写"之外的一切（评审、挑战、观察）都做成只读。
 
 ## 五条铁律
 
-违反任何一条，整套协议失效：
+违反任何一条，整套框架失效：
 
 1. 主 Agent 不下场干活——你一动手就没人验收了；
 2. 不并行派发会写同一工件的 agent——读可并行，写/合并永不；
@@ -84,44 +110,36 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 
 原理与排障：[docs/BOARD.md](docs/BOARD.md)（截图为演示数据）。
 
-## 效果数据（摘要）
+## 开发验证（简述）
 
-对照实验（同题 PRD，三条件 × 2 遍，独立评审盲评，30 分制）：
-
-![三条件盲评得分对比](docs/assets/scores.svg)
-
-| 条件 | tokens/遍 | 得分 | 结论 |
-|---|---|---|---|
-| 单角色基线 | 21k | 21.0 | 简单任务的最优解 |
-| 仅点名 skill | 32k | 17.25 | **负收益**（模板挤出实质内容） |
-| 本协议（参谋+返修） | 122k | **22.5** | 增益集中在指标口径与边界维度 |
-
-端到端小产品对照（盲评 40 分制）：本协议 **35/40** vs 单角色串行 **31/40**（+13%，成本 2.2×）：
-
-![端到端双流水线对比](docs/assets/e2e.svg)
-
-完整数据与方法（含 n=2 的统计学局限声明）：[docs/EVIDENCE.md](docs/EVIDENCE.md)。
+框架经过多轮真实项目开发验证（对照实验 + 端到端双流水线 + 两个真实产品全流程）：参谋机制在草稿期拦下过真实设计缺陷（如"无后端产品却写留存率北极星"），门禁拦截与返修回路按设计工作。自建对照实验规模有限（n=2，非等预算），**只作方向性参考，不作为权威结论**——设计正确性主要建立在上一节的研究依据之上。数据与方法全文：[docs/EVIDENCE.md](docs/EVIDENCE.md)。
 
 ## 诚实地说说优缺点
 
-**优点（有对照数据，方向性证据——n=2、非等预算，方向一致，待更大样本确认）**
+**优点（开发验证，方向性证据）**
 
-1. **能独立落地整个产品**：讲清需求、经简单追问澄清后，从需求→PRD→契约→可运行代码→测试全链路工件一次交付到位（端到端验证对象为无后端单页应用）；
-2. **产品质量高**：盲评对照 +13%；参谋在草稿期拦下监管级红线（如"无后端产品却写留存率北极星"）；
+1. **能独立落地整个产品**：讲清需求、经简单追问澄清后，从需求→PRD→契约→可运行代码→测试全链路工件一次交付到位（已在两个真实产品上完整跑通）；
+2. **产品质量护栏有效**：参谋在草稿期拦下监管级红线（如"无后端产品却写留存率北极星"），门禁与缺陷定性分流按设计工作；
 3. **过程可观察**：看板实时呈现阶段/卡片/消息流/token 账本，多 agent 交互不再是黑盒。
 
 **代价（这是设计代价，不是 bug）**
 
 1. **显著更慢**：多轮派发 + 门禁 + 返修，端到端时间显著长于单 agent 直接干；
-2. **token 消耗大**：参谋组、返修轮、看板轮询都在烧 token，估算为单 agent 基线的数倍——**此条未经严格量化验证，待等预算对照实验确认**（现有 2.2× 数据为非等预算口径）。
+2. **token 消耗大**：参谋组、返修轮、看板轮询都在烧 token，估算为单 agent 基线的数倍。
 
-**什么任务不该用它**：工作量不到一天的改动；决策链单一、切不开的任务；只想要补丁不想要工件链；token/时间预算紧到装不下返修轮。命中任一条，请用单角色直接干——分诊 L0 存在的意义就是把这条规则写进协议。
+**什么任务不该用它**：决策链单一、切不开的任务；只想要补丁不想要工件链；token/时间预算紧到装不下返修轮。命中任一条，请用单角色直接干——分诊 L0 存在的意义就是把这条规则写进框架。工作量不到一天的改动走**变更分诊快车道**（C0 轻改 = 1 次派发 + 1 行门禁记录；C1 小需求仅在契约变更时会签），不必也不该跑全流程。
 
 ## 仓库结构
 
 ```
-├── SKILL.md            # 协议本体（安装到 ~/.zcode/skills/project-orchestrator/）
+├── SKILL.md            # 框架本体：编排协议 + 流程纪律（安装到 ~/.zcode/skills/project-orchestrator/）
 ├── agents/             # 6 份角色契约（安装到 ~/.zcode/agents/）
+├── runtime/            # 协作运行时（随 install 安装到 ~/.zcode/skills/project-orchestrator/runtime/）
+│   ├── server.py / daemon.py / cli.py   # 看板服务、守护进程、子 agent 上报 CLI
+│   ├── lib/store.py    # 状态存储 + 消息总线 + 看门狗（存活判定/中断/续跑）
+│   ├── lib/usage.py    # token 账本（真实值优先读客户端会话库）
+│   ├── board_sync.py   # 从运行时真值生成 board.md
+│   └── ui/index.html   # 看板前端（无框架单文件）
 ├── docs/
 │   ├── BOARD.md          # 可视化看板（截图+运行原理）
 │   ├── USAGE.md          # 详细使用（安装/唤醒/派发/看板/验收）
@@ -140,7 +158,7 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 > Changelog：v4.0（ZCode 版，前两个先行实现之一，本仓库）已发布。
 
 - [ ] OpenCode 版（前两个先行实现之二，契约模板与阶段定义同源复用）
-- [ ] 通用版（平台无关的协议描述 + 适配层）
+- [ ] 通用版（平台无关的框架描述 + 适配层）
 
 详见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 

@@ -38,14 +38,21 @@ S0 立项 → S1 需求 → S2 架构 → S3 开发 → S4 集成 → S5 测试 
 
 ```mermaid
 flowchart LR
-    S0["S0 立项"] --> S1["S1 需求"] --> S2["S2 架构"] --> S3["S3 开发<br/>前后端并行"] --> S4["S4 集成"] --> S5["S5 测试"] --> S6["S6 终验"] --> S7["S7 交付·三签"]
+    S0["S0 立项"] --> S1["S1 需求"] --> S2["S2 架构"] --> S3["S3 开发<br/>前后端并行"] --> S4["S4 集成"] --> S5["S5 测试<br/>执行+报告"] --> S6["S6 终验"] --> S7["S7 交付·三签"]
     S2 <-."PM×架构师会签<br/>（必须串行）".-> S1
+    S2 -.->|"契约 PASS 后<br/>17-test-plan 前置开工"| S5
 ```
 
 - **PASS** 才进下一阶段；
 - **CONCERN** 放行但登记未决项（`.zcode/state/open-issues.md`）；
 - **FAIL** 退回重做；
 - **S7 三签**：dev-lead / qa / product-manager 三方签收缺一不交付。
+- **S5 前置（v4.1）**：用例设计只依赖契约不依赖代码，S2 门禁 PASS 后 qa 即与 S3
+  并行起草 `17-test-plan`（照常门禁）；S5 阶段只剩执行与 `18-test-report`。
+  前提是并发预算仍 ≤3：qa 进场时 S3 前后端已占两席，正好满编；
+  若 S3 期间还有外援在场，则 qa 推迟到任一席位空出。
+
+**入口变更分诊（v4.1）**：S1–S7 服务新需求面；上线后的增量改动在入口按 C0（单点轻改）/ C1（小需求，仅契约变更时会签）/ C2（走全流程）三级分诊，C0/C1 不开阶段状态机、门禁降为单点复查（`C0 fast-pass` / `C1 delta-pass`）。完整判据与增量纪律见 SKILL.md「变更分诊」。快车道的代价是契约漂移风险在集成期才暴露，所以判不准按 C1 走（会签便宜，漂移贵）。
 
 阶段真相源是 `runtime/projects/<pid>/plan.json`；`gate-log.md` 与 `open-issues.md` 是手写真相源；`board.md` 是派生文件（`board_sync.py` 生成，勿手改）。
 
@@ -79,6 +86,8 @@ sequenceDiagram
 3. **只读参谋（read-only advisors）**：需要多视角时，主角色保持唯一写笔，只读参谋对草稿做**一轮**并行挑刺（≤3 个、≤15 行挑战清单、互不对话），主笔吸收后返修一次。实测吸收率 81%，且这是 2026 年业界收敛的 generator–verifier 形态（Cognition）。
 4. **动态编制（triage L0–L2）**：派发前按工作量×可分解性分诊。**复杂 ≠ 可拆**：顺序耦合的工件（架构契约）加人有害（Google 研究：顺序任务多智能体全线 −39~70%）；可分解且机器可验证的工件（用例穷举、多页面）才加人。
 5. **门禁不放水**：CONCERN 必须留痕；把需求缺陷当开发 bug 派发是流程里最贵的浪费，所以定性权只归开发组长。
+6. **关键路径重叠，护栏不重叠（v4.1）**：依赖提前解除的工件（17-test-plan 只依赖契约）前置并行，省的是墙上时钟；依赖没解除的（会签、终验签字）绝不并行，省的只是返工。
+7. **流程开销要配得上改动大小（v4.1）**：阶段状态机是为「新需求面」设计的；对单点轻改跑全流程，门禁的固定开销反而超过质量收益。入口变更分诊（C0/C1/C2）让小改动按比例付费——但增量模式只裁流程步数，不裁门禁判定与留痕。
 
 > English TL;DR: five principles — single writer per artifact; one orchestration layer (no nested agents); read-only advisors challenging drafts for one round; triage-based dynamic staffing (complex ≠ decomposable — never parallelize sequential coupled work); and gates that log concerns instead of waving things through.
 
@@ -93,7 +102,7 @@ sequenceDiagram
 | `cli.py` | 子 agent 上报命令行：spawn/progress/heartbeat/say/task/finish/model-report |
 | `board_sync.py` | 从运行时真值重新生成 `board.md` |
 | `ui/index.html` | 看板前端（无框架单文件） |
-| 看门狗 | 每 15s 体检：静默 >240s 或进程消失判"中断"；优先读客户端 DB 判"活着/结束"，误判可撤销 |
+| 看门狗 | 每 15s 体检：静默 >240s 或进程消失判"中断"；优先读客户端 DB 判"活着/结束"，误判可撤销。子 agent 长 thinking 期靠定期 heartbeat 自证存活（v4.1），避免误判引发的取证/重派开销 |
 
 数据文件（均在 `runtime/projects/<pid>/`）：`state.json`（agent 状态与 phase）、`tasks.json`（任务登记）、`plan.json`（阶段规划）、`registry.json`（角色账本与模型降级链）、`ledger.jsonl`（token 账本）、`bus/*.jsonl`（消息与事件总线）。
 
