@@ -46,7 +46,7 @@
   <!-- 名称与 tagline -->
   <text x="712" y="138" font-size="50" font-weight="800" fill="#f2f6ff" letter-spacing="-1">Project Orchestrator</text>
   <text x="714" y="184" font-size="25" fill="#8fa8d8">多 Agent 协作开发框架</text>
-  <text x="714" y="228" font-size="19" fill="#5f7bab">单写手 · 只读参谋 · 门禁不放水 · 看板全程可观察</text>
+  <text x="714" y="228" font-size="19" fill="#5f7bab">几乎全自动 · 工程自动拆解 · 交付标准化 · 看板实时监控</text>
 
   <!-- 底部色带：六角色色 = 框架的"签名" -->
   <g>
