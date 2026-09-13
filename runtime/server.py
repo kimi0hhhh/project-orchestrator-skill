@@ -151,6 +151,10 @@ class Handler(BaseHTTPRequestHandler):
             # 供外部定时器调用：主动体检一遍，返回本次新判定为"中断"的 agent
             return self._send(200, {"interrupted": store.watchdog(pid)})
 
+        if p.startswith("/api/timetrack"):
+            # 耗时账单：项目墙钟/Σ工时/并行系数 + 阶段/任务/agent 三层累计（store.timetrack）
+            return self._send(200, store.timetrack(pid))
+
         if p.startswith("/api/plan"):
             plan = store.get_plan(pid)
             return self._send(200, {**plan, "overall": store.overall_progress(plan)})

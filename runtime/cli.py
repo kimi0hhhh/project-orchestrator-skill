@@ -209,6 +209,8 @@ def build_parser():
     p = add("phase", "切换全局阶段")
     p.add_argument("--phase", required=True)
 
+    p = add("time", "四层耗时账单：墙钟/Σ工时/并行系数 + 阶段/任务/agent 累计")
+
     p = add("reset", "清空当前项目运行时数据")
 
     return ap
@@ -407,6 +409,33 @@ def main():
         out(call("POST", "/api/blocked", {"agent": a.agent, "step": a.step, "project": P}))
     elif a.cmd == "phase":
         out(call("POST", "/api/phase", {"phase": a.phase, "project": P}))
+    elif a.cmd == "time":
+        r = call("GET", "/api/timetrack", project=P)
+        if not isinstance(r, dict) or "agents" not in r:
+            print("(耗时数据不可用：服务未启动或版本过旧)")
+            return
+        fm = lambda s: (f"{int(s//3600)}h{int(s%3600//60):02d}m{int(s%60):02d}s" if s >= 3600
+                        else f"{int(s//60)}m{int(s%60):02d}s")
+        pf = r.get("parallel_factor")
+        pf_s = "—" if pf is None else f"{pf}（1.0=全串行）"
+        print(f"项目 {r['project']}　墙钟 {fm(r['wall_s'])}　Σ工时 {fm(r['active_s'])}"
+              f"　并行系数 {pf_s}" + ("　[运行中]" if r.get("running") else ""))
+        if r["stages"]:
+            print("-" * 56)
+            for s in r["stages"]:
+                print(f"  阶段 {s['stage']:<4} {s['name']:<10} {s['runs']:>2} 轮　{fm(s['active_s'])}")
+        if r["agents"]:
+            print("-" * 56)
+            for a in r["agents"]:
+                tag = " ▶运行中" if a["state"] == "running" else (" ⚡中断" if a["state"] == "interrupted" else "")
+                print(f"  {a['agent']:<16} {a['runs']:>2} 轮　累计 {fm(a['active_s']):>10}"
+                      f"　最近 {fm(a['last_s']):>9}{tag}")
+        if r["tasks"]:
+            print("-" * 56)
+            for t in r["tasks"][:12]:
+                span = fm(t["span_s"]) if t.get("span_s") is not None else "—"
+                print(f"  [{t['status']:<7}] {t['task']:<10} {(t['title'] or '')[:24]:<24}"
+                      f" {t.get('agent') or '—':<14} 跨度 {span}")
     elif a.cmd == "reset":
         out(call("POST", "/api/reset", {"project": P}))
 

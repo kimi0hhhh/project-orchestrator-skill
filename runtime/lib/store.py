@@ -543,6 +543,105 @@ def get_tasks(pid=None):
     return load_json(proj_dir(pid) / "tasks.json", {})
 
 
+def timetrack(pid=None):
+    """耗时观测 v1：四层耗时账单，全部从事件总线/状态文件**重放推算**，不改写任何数据。
+
+    口径（验收测试以此为准）：
+    - agent 工时 = Σ [spawn → (finish|interrupt|now)] 区段秒数，时钟源 epoch；
+      未闭合的 spawn 视为 running（结束时间=now），重复 spawn 先闭合上一区段
+    - 阶段工时 = 区段归账到其**开始时**的全局阶段（phase 事件重放维护；
+      区段中途换阶段不拆分——拆分会把长区段算成两段短工时，反而失真）
+    - 任务耗时 = tasks.json 的 created→updated 跨度（span 口径，含空闲，非纯工时；
+      事件总线不携带 task_id，无法安全重放出任务的纯工时）
+    - 项目墙钟 = 首事件 → 末事件（仍有 running 区段时取 now）；
+      并行系数 = Σ工时 / 墙钟（1.0=全串行，>1 的部分就是并行收益）
+    """
+    pid = pid or current_project()
+    evs = read_jsonl(bus_dir(pid) / "events.jsonl")
+    now_ep = ts()
+    segments, open_seg = [], {}
+    phase, phases_seen = "S0", ["S0"]
+    first_ep = last_ep = None
+    for e in evs:
+        ep = e.get("epoch")
+        if not isinstance(ep, (int, float)):
+            continue
+        if first_ep is None:
+            first_ep = ep
+        last_ep = ep
+        k, a = e.get("kind"), e.get("agent")
+        if k == "phase":
+            ph = (e.get("text") or "").split("→")[-1].strip()
+            if ph and ph != phase:
+                phase = ph
+                if ph not in phases_seen:
+                    phases_seen.append(ph)
+        elif k == "spawn":
+            if a in open_seg:               # 未闭合就重开：按上一区段收口，不丢时间
+                s = open_seg.pop(a)
+                segments.append({**s, "end": ep, "state": "unclosed"})
+            open_seg[a] = {"agent": a, "start": ep, "phase": phase}
+        elif k in ("finish", "interrupt"):
+            if a in open_seg:
+                s = open_seg.pop(a)
+                segments.append({**s, "end": ep,
+                                 "state": "done" if k == "finish" else "interrupted"})
+    for a, s in open_seg.items():
+        segments.append({**s, "end": now_ep, "state": "running"})
+    for seg in segments:
+        seg["active_s"] = round(max(0.0, seg["end"] - seg["start"]), 1)
+
+    # —— agent 层：累计工时 / 轮次 / 最近一轮
+    agents = {}
+    for seg in segments:
+        d = agents.setdefault(seg["agent"], {"agent": seg["agent"], "runs": 0,
+                                             "active_s": 0.0, "last_s": 0.0,
+                                             "state": "idle", "phase": seg["phase"]})
+        d["runs"] += 1
+        d["active_s"] = round(d["active_s"] + seg["active_s"], 1)
+        d["last_s"] = seg["active_s"]
+        d["state"] = seg["state"]
+        d["phase"] = seg["phase"]
+
+    # —— 阶段层：plan 建过的阶段 + 事件里出现过的阶段都列账
+    plan = get_plan(pid)
+    stage_names = {s.get("id"): s.get("name", s.get("id")) for s in plan.get("stages", [])}
+    for ph in phases_seen:
+        stage_names.setdefault(ph, ph)
+    stages = []
+    for sid, sname in stage_names.items():
+        segs = [seg for seg in segments if seg["phase"] == sid]
+        if segs:
+            stages.append({"stage": sid, "name": sname, "runs": len(segs),
+                           "active_s": round(sum(x["active_s"] for x in segs), 1)})
+    stages.sort(key=lambda x: x["stage"])
+
+    # —— 任务层：created→updated 跨度（span 口径）
+    tasks = []
+    for tid, t in get_tasks(pid).items():
+        span = None
+        try:
+            c = datetime.strptime(t.get("created"), "%Y-%m-%d %H:%M:%S").timestamp()
+            u = datetime.strptime(t.get("updated"), "%Y-%m-%d %H:%M:%S").timestamp()
+            span = round(max(0.0, u - c), 1)
+        except Exception:
+            pass
+        tasks.append({"task": tid, "title": t.get("title", ""), "agent": t.get("agent"),
+                      "phase": t.get("phase", ""), "status": t.get("status", ""),
+                      "span_s": span})
+    tasks.sort(key=lambda x: -(x["span_s"] or 0))
+
+    # —— 项目层：墙钟 + 并行系数
+    active_total = round(sum(a["active_s"] for a in agents.values()), 1)
+    running = any(s["state"] == "running" for s in segments)
+    wall_end = now_ep if running else (last_ep or first_ep or now_ep)
+    wall_s = round(max(0.0, wall_end - first_ep), 1) if first_ep else 0.0
+    return {"project": pid, "wall_s": wall_s, "active_s": active_total,
+            "parallel_factor": (round(active_total / wall_s, 2) if wall_s > 0 else None),
+            "running": running, "agents": sorted(agents.values(), key=lambda x: -x["active_s"]),
+            "stages": stages, "tasks": tasks, "segments": segments[-400:]}
+
+
 def memory_path(agent_id, pid=None):
     return agents_dir(pid) / agent_id / "memory.md"
 

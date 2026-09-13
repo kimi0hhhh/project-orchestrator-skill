@@ -1005,7 +1005,35 @@ table.pm td.mono{font-family:var(--mono);color:var(--tx3);font-variant-numeric:t
 .ovk{flex:0 0 68px;color:var(--tx3)}
 .ovv{flex:1;color:var(--tx);word-break:break-word}
 .ovv i{display:block;color:var(--tx3);font-style:normal;font-size:10px;margin-top:1px}
-.ovv b.ov-zc{color:var(--blue-tx)}
+.ovv b.ov-zc{color:var(--blue-tx)}/* ---------- 耗时账单（timetrack 面板，与 Token 面板同族玻璃面） ---------- */
+.tt-empty{padding:var(--sp4) 0;color:var(--tx3);font-size:var(--fs-s)}
+.tt-head{display:flex;gap:var(--sp2);margin:4px 0 2px}
+.tt-kpi{flex:1;background:var(--panel3);border:1px solid var(--line2);border-radius:8px;
+  padding:6px 8px;text-align:center;min-width:0}
+.tt-kpi i{display:block;font-style:normal;font-size:var(--fs-xs);color:var(--tx3)}
+.tt-kpi b{font-size:var(--fs-b);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tt-note{font-size:var(--fs-xs);color:var(--tx3);margin:2px 0 4px;line-height:1.5}
+.tt-sect{font-size:var(--fs-xs);color:var(--tx3);letter-spacing:.04em;margin:8px 0 2px;
+  border-top:1px solid var(--line2);padding-top:6px}
+.tt-row{display:flex;align-items:center;gap:var(--sp2);padding:2px 0;font-size:var(--fs-s);min-width:0}
+.tt-lab{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tt-lab em{font-style:normal;font-size:var(--fs-xs);margin-left:4px}
+.tt-lab .tt-run{color:var(--green-tx)}
+.tt-lab .tt-int{color:var(--amber-tx)}
+.tt-num{color:var(--tx2);font-size:var(--fs-xs);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tt-bar{flex:0 0 38%;height:8px;background:var(--track);border-radius:4px;overflow:hidden}
+.tt-bar i{display:block;height:100%;background:var(--blue);border-radius:4px}
+.tt-gantt{display:flex;flex-direction:column;gap:4px;margin:4px 0 2px}
+.tt-lane{display:flex;align-items:center;gap:6px}
+.tt-lane-lab{flex:0 0 86px;font-size:var(--fs-xs);color:var(--tx2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+.tt-lane-trk{flex:1;position:relative;height:12px;background:var(--track);border-radius:6px;overflow:hidden}
+.tt-seg{position:absolute;top:2px;bottom:2px;border-radius:3px;min-width:2px;cursor:default}
+.tt-seg.run{opacity:.55;box-shadow:inset 0 0 0 1px var(--green-line)}
+.tt-chips{display:inline-flex;gap:8px;margin-left:4px;flex-wrap:wrap}
+.tt-chip{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-xs);color:var(--tx3)}
+.tt-chip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
 </style>
 <script>
 /* 防主题闪白：在解析到正文主体之前先把 data-theme 定下来（纯本地，无网络请求） */
@@ -1130,6 +1158,12 @@ try{
       <div class="sec">
         <h3>任务进度</h3>
         <div id="tasks"></div>
+      </div>
+      <div class="sec" style="padding:0;border-bottom:none">
+        <div class="tokblk flat" id="time-block">
+          <div class="tok-h" style="padding:12px 13px 4px"><h3>耗时账单</h3><span id="ttMeta"></span></div>
+          <div class="tk-body" id="ttBody" style="padding:2px 13px 10px" aria-live="polite"></div>
+        </div>
       </div>
       <div class="sec" style="padding:0;border-bottom:none">
         <div class="tokblk flat" id="token-block">
@@ -1309,6 +1343,11 @@ async function poll(){
     const r2 = await fetch('/api/artifacts');
     artifacts = (await r2.json()).artifacts || [];
     renderFiles();
+  }catch(e){}
+  try{
+    const r3 = await fetch('/api/timetrack' + (curProj ? '?project='+curProj : ''));
+    timetrack = await r3.json();
+    renderTime();
   }catch(e){}
 }
 
@@ -2599,6 +2638,86 @@ function isPathEscaped(p){
     || /^[a-zA-Z]:/.test(p);
 }
 /* v4.1：登记路径 404 时按文件名在工作区内自动重定位（工件被移动/重建的兜底） */
+/* ---------- 耗时账单（/api/timetrack：四层累计 + 甘特时间线） ---------- */
+let timetrack = null, ttSig = '';
+function ttFmt(s){
+  if(s==null) return '—';
+  s = Math.round(s);
+  if(s < 60) return s + 's';
+  const m = Math.floor(s/60), r = s%60;
+  if(m < 60) return m + 'm' + String(r).padStart(2,'0') + 's';
+  return Math.floor(m/60) + 'h' + String(m%60).padStart(2,'0') + 'm' + String(s%60).padStart(2,'0') + 's';
+}
+function renderTime(){
+  const box = $('ttBody'); if(!box) return;
+  if(!timetrack || !timetrack.agents || !timetrack.agents.length){
+    box.innerHTML = '<div class="tt-empty">尚无耗时数据（本项目还没有 agent 上报 spawn/finish）</div>';
+    $('ttMeta').textContent = '';
+    return;
+  }
+  // 签名防闪烁：与设置面板同族的轮询重绘问题，数据没变就不重建 DOM
+  const sig = JSON.stringify([timetrack.wall_s, timetrack.active_s, timetrack.parallel_factor,
+    timetrack.agents, timetrack.stages, timetrack.tasks,
+    timetrack.segments.map(x=>[x.agent,Math.round(x.start),Math.round(x.end),x.state,x.phase])]);
+  if(sig === ttSig) return;
+  ttSig = sig;
+  const t = timetrack;
+  const pf = t.parallel_factor==null ? '—' : t.parallel_factor;
+  $('ttMeta').textContent = (t.running ? '运行中 · ' : '') + '并行系数 ' + pf;
+  const TT_PAL = ['var(--blue)','var(--green)','var(--amber)','var(--purple)','var(--red)','var(--gray)'];
+  const colOf = {}; let ci = 0;
+  (t.stages||[]).forEach(s=>{ colOf[s.stage] = TT_PAL[ci++ % TT_PAL.length]; });
+  let h = `<div class="tt-head">
+      <div class="tt-kpi"><i>墙钟</i><b>${ttFmt(t.wall_s)}</b></div>
+      <div class="tt-kpi"><i>Σ工时</i><b>${ttFmt(t.active_s)}</b></div>
+      <div class="tt-kpi"><i>并行系数</i><b>${pf}</b></div></div>
+    <div class="tt-note">并行系数 = Σ工时 ÷ 墙钟：1.0=全串行，&gt;1 的部分就是并行收益</div>`;
+  if(t.stages && t.stages.length){
+    const mx = Math.max.apply(null, t.stages.map(s=>s.active_s).concat([1]));
+    h += '<div class="tt-sect">阶段累计</div>';
+    t.stages.forEach(s=>{
+      h += `<div class="tt-row"><span class="tt-lab">${esc(s.stage)} ${esc(s.name||'')}</span>
+        <span class="tt-bar"><i style="width:${Math.round(s.active_s/mx*100)}%;background:${colOf[s.stage]}"></i></span>
+        <span class="tt-num">${s.runs}轮 ${ttFmt(s.active_s)}</span></div>`;
+    });
+  }
+  if(t.agents && t.agents.length){
+    h += '<div class="tt-sect">Agent 累计</div>';
+    t.agents.forEach(a=>{
+      const tag = a.state==='running' ? '<em class="tt-run">▶运行中</em>'
+                : a.state==='interrupted' ? '<em class="tt-int">⚡中断</em>' : '';
+      h += `<div class="tt-row"><span class="tt-lab">${esc(a.agent)}${tag}</span>
+        <span class="tt-num">${a.runs}轮 · 累计 ${ttFmt(a.active_s)} · 最近 ${ttFmt(a.last_s)}</span></div>`;
+    });
+  }
+  const segs = (t.segments||[]).filter(x=>x.active_s > 0.5);
+  if(segs.length && t.wall_s > 0){
+    const w0 = Math.min.apply(null, segs.map(x=>x.start));
+    h += '<div class="tt-sect">时间线（甘特）</div><div class="tt-gantt">';
+    t.agents.forEach(a=>{
+      h += `<div class="tt-lane"><span class="tt-lane-lab">${esc(a.agent)}</span><span class="tt-lane-trk">` +
+        segs.filter(x=>x.agent===a.agent).map(x=>{
+          const l = Math.max(0, (x.start-w0)/t.wall_s*100);
+          const w = Math.max(0.8, Math.min(100-l, x.active_s/t.wall_s*100));
+          const tip = `${esc(x.agent)} · ${esc(x.phase)} · ${ttFmt(x.active_s)}` +
+            (x.state==='running' ? ' · 运行中' : x.state==='interrupted' ? ' · 中断' : '');
+          return `<i class="tt-seg ${x.state==='running'?'run':''}" style="left:${l}%;width:${w}%;background:${colOf[x.phase]||'var(--gray)'}" title="${tip}"></i>`;
+        }).join('') + `</span><span class="tt-lane-num tt-num">${ttFmt(a.active_s)}</span></div>`;
+    });
+    h += '</div><div class="tt-note"><span class="tt-chips">' +
+      (t.stages||[]).map(s=>`<span class="tt-chip"><i style="background:${colOf[s.stage]}"></i>${esc(s.stage)}</span>`).join('') +
+      '</span> 半透明=运行中，⚡=中断收口</div>';
+  }
+  if(t.tasks && t.tasks.length){
+    h += '<div class="tt-sect">任务跨度</div>';
+    t.tasks.slice(0,8).forEach(x=>{
+      h += `<div class="tt-row"><span class="tt-lab">[${esc(x.status)}] ${esc(x.task)} ${esc((x.title||'').slice(0,20))}</span>
+        <span class="tt-num">${esc(x.agent||'—')} · ${ttFmt(x.span_s)}</span></div>`;
+    });
+  }
+  box.innerHTML = h;
+}
+
 async function relocateArtifact(p){
   try{
     const r2 = await fetch('/api/artifacts');

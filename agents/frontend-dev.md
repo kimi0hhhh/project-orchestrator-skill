@@ -4,7 +4,7 @@ description: "前端开发：按 UI 设计与接口契约实现前端壳与交�
 tools: [Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch, Skill, TodoWrite, TaskOutput]
 
 # 高质量档示例: model: "<providerId>/<premium-modelId>"
-model: "<providerId>/<modelId>"   # 可选：按角色钉模型，格式 providerId/modelId（不写=继承主会话模型）
+# model: "<providerId>/<modelId>"   # 占位符未替换会导致派发直接报错 Model provider is not configured；钉模型时再解开并填真实 providerId/modelId
 ---
 
 <!-- 由 tools/build_opencode.py 从 ZCode 源契约生成；改内容请改源文件后重新构建 -->

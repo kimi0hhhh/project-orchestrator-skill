@@ -2,7 +2,7 @@
 name: project-orchestrator
 description: 多 Agent 协作编排模式（ZCode 版）。当用户说「启动主 Agent」「接管项目」「按 ORCHESTRATOR 继续」「多 agent 协作开发」「派发任务」时加载。定义主 Agent 的职责边界、唤醒流程、Agent 工具派发与验收规范。主 Agent 是项目负责人，是用户唯一的沟通对象，对最终交付负责。
 metadata:
-  version: "4.1"
+  version: "4.3"
   target: zcode
 ---
 
@@ -24,6 +24,9 @@ metadata:
 4. **每个子 agent 只看它该看的文件** —— 派发时明确列「允许读」，防止信息过载。
 5. **只在四种情况打断用户** —— ① Brief 缺核心信息 ② 会签有无法内部消化的冲突
    ③ 需要砍需求才能按时交付 ④ 终验不通过需要裁决。其余一律自行推进。
+6. **循环有上限** —— PM×架构师会签、CONCERN 返修环最多 **2 轮**：第 1 轮内部消化，
+   第 2 轮仍收敛不了就带着双方论点升级用户（本就是允许打断的情况②③），
+   禁止在 agent 之间无限迭代——每多一轮就是一组完整派发。
 
 ## 关键路径重叠（提速不减质）
 
@@ -104,15 +107,38 @@ board.md 就永远是准的。
 - 允许读的文件清单（明确列出，不给整个目录）
 - 必须写的文件（**绝对路径**，没有交付物就是没有任务）
 - 硬性约束与禁止项（含「禁止修改 `runtime/**`」）
-- **必须调 `runtime/cli.py` 上报**：spawn → progress（≥3 次）→ say/inbox → remember → finish
+- **必须调 `runtime/cli.py` 上报**：spawn → progress（**按任务时长定**：预计 ≤10 分钟的
+  短任务开工 1 报 + finish 即可，不凑次数；长任务每 ~5 分钟 1 次）→ say/inbox → remember → finish。
+  实测每次上报都是一轮工具往返（子 agent 侧 ~10–20 秒）+ 一次 python 进程启动，短任务凑满
+  3 次纯属上税。
 - 所有 cli 命令带 `--project <项目id>`
 - 回传信号不超过 15 行
+- **验证规模上限**：完成判据写明核到什么程度（契约示例 + 边界即止），禁止子 agent
+  自行加码大规模性质验证——同任务实测 token 波动 ±30%、最贵最便宜差一倍，
+  验证强度自选是主要来源（A/B 六轮零返工即靠此条）
 - **派发前 pre-flight（机械执行，缺一不派）**：
   1. 逐个确认被引用文件**已落盘且非空**（`ls -la` 实查，不凭记忆）——引用未落盘文件
      曾造成整轮返工（98k tokens，EVIDENCE §6）；
   2. 「允许读」清单与子 agent 实际需要一致：多给=上下文过载，少给=拒收重来；
   3. 工件路径为**绝对路径**且父目录存在（必要时先 `mkdir -p`）；
   4. 上报要求、`--project <id>`、完成判据逐条写全，不留「它应该知道」。
+- **优先用派发管家一条命令做完上面的事**（v4.2，`runtime/dispatch.py`）：
+  `prepare` = 预检允许读文件（不过就拒绝出 prompt）→ **自动回读该角色 remember 记忆并嵌入
+  prompt**（子 agent 免 recall、主 Agent 免手拼上下文）→ 建看板节点 → 输出含允许读/必须写/
+  硬约束/上报协议/完成判据/角色记忆/回传格式的成品 prompt：
+
+  ```bash
+  python runtime/dispatch.py prepare --agent backend-dev --title "S3 后端契约实现" \
+      --reads docs/PROJECT_BRIEF.md,docs/09-api-contract.md \
+      --write "C:\\abs\\server.py" \
+      --criteria "09 契约逐字段对齐" --project <pid>
+  ```
+
+  运行时未连接时降级可用（本地预检照跑）。**续会话返修用 `--no-spawn`**，不重建节点。
+  **长会话/多次派发必开 `--prompt-file`**：任务书落盘到工作区，Agent 调用只写一行引用——
+  主 Agent 每次派发的上下文增量从 1–2k token 降到一行，任务书本身也成了可追溯的工件。
+  **记忆卫生**：`remember` 只写约束级结论（能改成规矩的），不记叙事过程；
+  回读嵌入超过一屏就主动合并清档，别让角色记忆变成新的预热负担。
 - **派发前主 Agent 自己先跑** `cli.py spawn --agent <id> --title <阶段+任务>` 建节点
   —— Agent 工具派发不经 runtime，不 spawn 则看板无节点、工件面板无从展开
 - 【完成后】必须写明 `finish --artifact <产出路径> --artifact-summary "一句话"`
@@ -128,6 +154,8 @@ board.md 就永远是准的。
 - 同时 working 的子 Agent **不超过 3 个**，先收敛再派新。
 - **一层编排**：所有角色契约的 frontmatter `tools` 都**不含** `Agent`（第一道，也是主要那道），
   结构上堵死子 agent 再派孙 agent；需要拆解时上报主 Agent。
+- **并行要真并行**：能同时开工的派发（前后端、前置 QA 计划）必须在**同一条消息里同时发出**
+  多个 Agent 调用——「派一个、等回来、再派下一个」等于白扔并发预算，关键路径全是自找的串行。
 
 ### 外援（7 个角色覆盖不到的能力）
 
@@ -194,6 +222,12 @@ python runtime/board_sync.py            # 把 board.md 从运行时真值重新�
 **结果落盘到 `.zcode/state/gate-log.md`**，然后重跑 `board_sync.py`。
 
 只凭机器信号块判断是否放行，不重读全文（除非信号里出现 ❌ 或「风险」非空）。
+工件落盘核验一条命令：`python runtime/dispatch.py close --agent <角色> --artifact <路径>`
+（缺失/0 字节 exit 1，可加 `--expect "<标记串>"` 验判据；子 agent 忘报 finish 用 `--finish` 补记），
+它同时给出 gate-log 建议行。
+**耗时对账**：看板「耗时账单」面板或 `python runtime/cli.py time --project <pid>`
+（墙钟/Σ工时/并行系数 + 阶段·任务·agent 累计，数据源 `/api/timetrack`）；
+retro 第 3 问（token/耗时大头）从此看面板对账，不再靠感觉。提效手段总集见 `docs/EFFICIENCY-SOP.md`。
 
 ## 缺陷分流（不是所有 bug 都给开发）
 

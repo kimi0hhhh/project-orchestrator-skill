@@ -15,3 +15,11 @@ runtime/projects/*/ledger.jsonl
 runtime/.port
 runtime/.server.pid
 runtime/server.log
+
+# 运行时本地状态（v4.3 补全：协作数据不上仓库）
+runtime/projects.json
+runtime/projects/
+runtime/.lock
+runtime/server.log
+__pycache__/
+*.pyc
