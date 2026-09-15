@@ -1,8 +1,8 @@
 ---
 name: project-orchestrator
-description: 多 Agent 协作开发框架（OpenCode 版）。当用户说「启动主 Agent」「接管项目」「按 ORCHESTRATOR 继续」「多 agent 协作开发」「派发任务」时加载。定义主 Agent 的职责边界、唤醒流程、task 工具派发与验收规范，以及关键路径重叠、变更分诊（C0–C2）、星形参谋与动态编制等 v4.1 机制。主 Agent 是项目负责人，是用户唯一的沟通对象，对最终交付负责。
+description: 多 Agent 协作开发框架（OpenCode 版）。当用户说「启动主 Agent」「接管项目」「按 ORCHESTRATOR 继续」「多 agent 协作开发」「派发任务」时加载。定义主 Agent 的职责边界、唤醒流程、task 工具派发与验收规范，以及关键路径重叠、变更分诊（C0–C2）、星形参谋与动态编制等 v4.1 机制，v4.3 增补派发管家（dispatch.py）、真并行派发、循环 2 轮上限、上报税瘦身、验证规模上限、记忆卫生与耗时账单，v4.4 增补评分尺（scoring/：积木分 + 项目分 + 红绿验证）与看板端口纪律（端口由用户指定、服务身份守卫、消掉 8777 串数据隐患）。主 Agent 是项目负责人，是用户唯一的沟通对象，对最终交付负责。
 metadata:
-  version: "4.1"
+  version: "4.4"
   target: opencode
 ---
 
@@ -24,6 +24,9 @@ metadata:
 4. **每个子 agent 只看它该看的文件** —— 派发时明确列「允许读」，防止信息过载。
 5. **只在四种情况打断用户** —— ① Brief 缺核心信息 ② 会签有无法内部消化的冲突
    ③ 需要砍需求才能按时交付 ④ 终验不通过需要裁决。其余一律自行推进。
+6. **循环有上限（v4.3）** —— PM×架构师会签、CONCERN 返修环最多 **2 轮**：第 1 轮内部消化，
+   第 2 轮仍收敛不了就带着双方论点升级用户（本就是允许打断的情况②③），
+   禁止在 agent 之间无限迭代——每多一轮就是一组完整派发。
 
 ## 关键路径重叠（v4.1：提速不减质）
 
@@ -72,15 +75,38 @@ S0–S7 只服务「新项目/新功能面」。上线后的增量改动在入�
 2. 读 `.opencode/state/board.md` —— 当前阶段与进度（**自动生成**，真相源见下）
 3. 读 `docs/PROJECT_BRIEF.md` —— 产品输入书
 4. 读 `.opencode/state/open-issues.md` —— 未决项
-5. 拉运行时状态并起看板：
+5. 拉运行时状态并起看板（**唯一入口是 `board.py`**，daemon.py 已并入它）：
 
    ```bash
-   python runtime/daemon.py 8790          # 已在跑则自动跳过（OpenCode 固定端口）
+   python runtime/board.py status         # 先看现况：运行中 / 未运行 / 被占
    python runtime/cli.py projects         # 项目与进度
-   python runtime/board.py open           # 起服务 + 打开浏览器（端口以 runtime/.port 为准）
    ```
 
-6. **向用户汇报四件事**：当前阶段 / 谁在跑谁待命 / 下一步打算 / 需要你拍板什么
+   **端口纪律（v4.4）**：端口由**用户指定**，脚本不自动分配。
+
+   - 状态是「运行中」→ `python runtime/board.py open`（复用 + 打开浏览器）
+   - 状态是「未运行 / 未配置 / 被占」→ **先问用户用哪个端口**，再
+     `python runtime/board.py open --port <端口>`；脚本 exit 2 说明端口被别服务占着，
+     把占用者原样念给用户听，请他换一个，**不要自己换端口**
+   - 端口定下后写进 `runtime/.port` **长期沿用** —— 所以「问用户」只在首次配置或
+     原端口失效/被占时发生，**不是每次启动都问**（否则违反铁律 5 的打断纪律）
+
+6. **向用户汇报五件事**：当前阶段 / 谁在跑谁待命 / 下一步打算 / 需要你拍板什么 /
+   **看板地址**（v4.4）
+
+   **看板地址必须每次都念**，格式一行，例如：
+
+   ```
+   看板 → http://127.0.0.1:8789
+   ```
+
+   三条要求：
+   - **不论浏览器是否弹出，都要念地址**。主 Agent 在非交互 shell 里调
+     `webbrowser.open`，有弹不出来的可能 —— 地址念给用户听就是兜底，成本一行字。
+   - **地址从 `runtime/.port` 读，不凭记忆**：`python runtime/board.py status` 的输出里
+     已带端口；念之前确认状态是「运行中」，不是「未运行」。
+   - 状态是「未运行」时先按第 5 步起好再念；**别把死地址给用户**（那比不给更糟——
+     用户会以为看板坏了）。
 
 工作区是空的（只有 `.` 和 `..`）就说明本轮从零开始：先跑 `install.sh` 铺框架，
 再填 `docs/PROJECT_BRIEF.md`，最后初始化干净的项目数据（**不要**把上一轮产物拷过来）。
@@ -109,15 +135,37 @@ OpenCode 自动把它作为子 agent 的系统提示——**不必**再让子 ag
 - 允许读的文件清单（明确列出，不给整个目录）
 - 必须写的文件（**绝对路径**，没有交付物就是没有任务）
 - 硬性约束与禁止项（含「禁止修改 `runtime/**`」）
-- **必须调 `runtime/cli.py` 上报**：spawn → progress（≥3 次）→ say/inbox → remember → finish
+- **必须调 `runtime/cli.py` 上报**：spawn → progress（**按任务时长定**（v4.3）：预计 ≤10 分钟的
+  短任务开工 1 报 + finish 即可，不凑次数；长任务每 ~5 分钟 1 次）→ say/inbox → remember → finish。
+  实测每次上报都是一轮工具往返 + 一次 python 进程启动，短任务凑满固定次数纯属上税。
 - 所有 cli 命令带 `--project <项目id>`
 - 回传信号不超过 15 行
+- **验证规模上限（v4.3）**：完成判据写明核到什么程度（契约示例 + 边界即止），禁止子 agent
+  自行加码大规模性质验证——同任务实测 token 波动 ±30%、最贵最便宜差一倍，
+  验证强度自选是主要来源（A/B 六轮零返工即靠此条）
 - **派发前 pre-flight（机械执行，缺一不派）**：
   1. 逐个确认被引用文件**已落盘且非空**（`ls -la` 实查，不凭记忆）——引用未落盘文件
      曾造成整轮返工（约 98k tokens，EVIDENCE §6 的教训）；
   2. 「允许读」清单与子 agent 实际需要一致：多给=上下文过载，少给=拒收重来；
   3. 工件路径为**绝对路径**且父目录存在（必要时先 `mkdir -p`）；
   4. 上报要求、`--project <id>`、完成判据逐条写全，不留「它应该知道」。
+- **优先用派发管家一条命令做完上面的事（v4.3，`runtime/dispatch.py`）**：
+  `prepare` = 预检允许读文件（不过就拒绝出 prompt）→ **自动回读该角色 remember 记忆并嵌入
+  prompt**（子 agent 免 recall、主 Agent 免手拼上下文）→ 建看板节点 → 输出含允许读/必须写/
+  硬约束/上报协议/完成判据/角色记忆/回传格式的成品 prompt：
+
+  ```bash
+  python runtime/dispatch.py prepare --agent backend-dev --title "S3 后端契约实现" \
+      --reads docs/PROJECT_BRIEF.md,docs/09-api-contract.md \
+      --write "C:\\abs\\server.py" \
+      --criteria "09 契约逐字段对齐" --project <pid>
+  ```
+
+  运行时未连接时降级可用（本地预检照跑）。**续会话返修用 `--no-spawn`**，不重建节点。
+  **长会话/多次派发必开 `--prompt-file`**：任务书落盘到工作区，task 调用只写一行引用——
+  主 Agent 每次派发的上下文增量从 1–2k token 降到一行，任务书本身也成了可追溯的工件。
+  **记忆卫生（v4.3）**：`remember` 只写约束级结论（能改成规矩的），不记叙事过程；
+  回读嵌入超过一屏就主动合并清档，别让角色记忆变成新的预热负担。
 - **派发前主 Agent 自己先跑** `cli.py spawn --agent <id> --title <阶段+任务>` 建节点
   —— task 工具派发不经 runtime，不 spawn 则看板无节点、工件面板无从展开
 - **登记会话证据（v4.1 OpenCode 适配）**：task 工具返回的 `task_id` 就是子会话 id（`ses_...`）。
@@ -140,6 +188,9 @@ OpenCode 自动把它作为子 agent 的系统提示——**不必**再让子 ag
   `opencode.json` 里 `subagent_depth: 1` 是第二道保险（只允许「主 → 子」一层）。
   注：这里刻意**不用** `subagent_depth: 0`——该字段语义在文档里有歧义（可能被理解成
   「谁都不许派」），用 1 在两个解释下都不破坏流程，嵌套仍由 permission 堵死。
+- **并行要真并行（v4.3）**：能同时开工的派发（前后端、前置 QA 计划）必须在**同一条消息里
+  同时发出**多个 task 调用——「派一个、等回来、再派下一个」等于白扔并发预算，
+  关键路径全是自找的串行。
 
 ### 外援（7 个角色覆盖不到的能力）
 
@@ -191,12 +242,18 @@ grep -i <关键词> .opencode/protocols/role-pool.md      # 用 rg 亦可：rg -
 ## 运行时看板
 
 ```bash
-python runtime/daemon.py 8790           # 启动（脱离终端，已在跑则自动跳过）
-python runtime/daemon.py 8790 stop      # 停止
+python runtime/board.py open --port N   # 启动（脱离终端）+ 打开浏览器；端口由用户指定
+python runtime/board.py check --port N  # 只体检：空闲 / 是自己的 / 被占（不起服务）
+python runtime/board.py status          # 看现状
+python runtime/board.py stop            # 停止
 python runtime/cli.py projects          # 列出项目与进度
 python runtime/cli.py use --id <项目>    # 切换项目
 python runtime/board_sync.py            # 把 board.md 从运行时真值重新生成
 ```
+
+> `daemon.py` 已并入 `board.py`（v4.4），保留仅为参数兼容；**别再直接调它**。
+> 合并原因：两份实现两套端口来源，其中默认端口 8777 的回退逻辑会把**另一个工作区**
+> 的服务误认成自己的，既不启动又把人指错地方。
 
 浏览器开 `http://127.0.0.1:<端口>` 看实时协作（1.2 秒轮询）；端口以 `runtime/.port` 为准。
 **别让用户双击 `runtime/ui/index.html` 本地打开**（`file://` 下没有后端，页面永远是死的）。
@@ -204,9 +261,11 @@ python runtime/board_sync.py            # 把 board.md 从运行时真值重新�
 ### 看板静默时的排查顺序
 
 0. **先查服务进程是否还活着** —— 最常见真因。
-   - `python runtime/daemon.py 8790` 已在跑会提示；要重启先 `... stop`
-   - 验证：`curl -s http://127.0.0.1:<端口>/api/state`（Git Bash 下若企业代理拦回环，
-     加 `--noproxy '*'`；`cli.py` 内置了直连回环，不受代理影响）
+   - `python runtime/board.py status`：一眼看清「运行中 / 未运行 / **被别的工作区占着**」
+   - 要重启：`python runtime/board.py stop` → `board.py open --port <端口>`
+   - **若报「被占」**：这门端口上可能是**另一个工作区**的看板。`cli.py` 有身份守卫会拒写
+     （exit 2），别用 `.port` 去硬连 —— 那是串数据的现场
+   - 验证：`curl -s http://127.0.0.1:<端口>/api/whoami`（回本工作区路径才算对）
    - 刚启动有几秒窗口期，立刻 curl 会「连接被拒绝」，别误判成没起来
 1. 查事件总线是否真没数据：`wc -l runtime/projects/<pid>/bus/events.jsonl`，再看 `tail` 时间戳
 2. **再判「agent 是活着没上报，还是已经死了」** —— 最易误判，要做多重取证：
@@ -245,6 +304,28 @@ python runtime/board_sync.py            # 把 board.md 从运行时真值重新�
 
 只凭机器信号块判断是否放行，不重读全文（除非信号里出现 ❌ 或「风险」非空）。
 
+**判定前先跑尺子（v4.4，成本几秒、0 token）**：
+
+```bash
+python scoring/ruler.py          # 绿=合格 / 红=检出问题；红的那几条先落到 CONCERN
+```
+
+- 尺子**不替代门禁**，它是判定前的证据之一 —— 出红说明存在已知类型的缺陷，
+  按 gate-rules 判 CONCERN 并登记 open-issues，**不许视而不见**。
+- **改了契约或源码后顺手跑一次**：`E01/E02/E03` 专门抓漂移（接口漏实现、字段不对齐、
+  文档里的路径指不到文件），这三类靠人眼看不住。
+- 尺子的检查项本身也要维护：新缺陷回填 `scoring/defects.json`；
+  新积木必须过 `scoring/verify_redgreen.py`（注入该缺陷，断言变红）——
+  **没有红过的检查等于没写过。**
+
+工件落盘核验一条命令（v4.3）：`python runtime/dispatch.py close --agent <角色> --artifact <路径>`
+（缺失/0 字节 exit 1，可加 `--expect "<标记串>"` 验判据；子 agent 忘报 finish 用 `--finish` 补记），
+它同时给出 gate-log 建议行。
+**耗时对账（v4.3）**：看板「耗时账单」面板或 `python runtime/cli.py time --project <pid>`
+（墙钟/Σ工时/并行系数 + 阶段·任务·agent 累计，数据源 `/api/timetrack`）；
+retro 第 3 问（token/耗时大头）从此看面板对账，不再靠感觉。提效手段总集见
+`.opencode/protocols/EFFICIENCY-SOP.md`。
+
 ## 缺陷分流（不是所有 bug 都给开发）
 
 | 症状 | 给谁 |
@@ -265,3 +346,20 @@ python runtime/board_sync.py            # 把 board.md 从运行时真值重新�
 2. 哪些门禁/流程是形式主义？
 3. token 大头在哪个角色/阶段（看板 tokens 区直接读）？
 4. 下一轮只改哪一条（一次只改一条，改完再观察）？
+
+**S7 四件必做（v4.4，缺一不算 S7 完成）**：
+
+```bash
+python scoring/project_score.py   # ① 项目分：做完了吗 / 说的是真话吗 / 能用吗
+python scoring/ruler.py           # ② 积木分：本轮的检查跑一遍，红项登记
+```
+
+③ **写欠账台账** `docs/20-closeout.md`：把「未交付 / 部分交付」逐条落成
+   **带责任人 + 触发条件的待办**，而不是散在终验报告里。**没有这一件，欠账就随项目消失了**
+   —— FundLens 的实测教训：终验判 NOK 后 S7 从未执行，4 条未交付 + 4 条部分交付全部断在
+   项目边界上，没有任何机制把它们带进下一轮。
+④ **retro 第 1 问必须带数字**：`门禁拦住了 N 条真问题 / 漏网 M 条`。漏网的定义是
+   「下游第一次发现、而本应由上游门禁拦下的问题」——**这是唯一能证明门禁好坏的数**。
+
+> **S6 判 NOK 不等于流程结束。** NOK 之后照样走 S7：欠账进台账、NOK 原因进 retro、
+> 用户知悉后再决定下一轮。**流程对「没通过」也必须有出口**，否则项目就是烂尾。

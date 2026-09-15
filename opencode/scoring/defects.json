@@ -1,0 +1,74 @@
+{
+  "_说明": "题库：FundLens 项目真实发生过的 8 条缺陷。每条都已知道根因与正确修法，因此可当考题。新增项目时，把该项目的缺陷单追加进来——题库随项目增长。",
+  "_判分": "能红 = 抓到；绿 = 漏。分数 = 能红的条数 ÷ 总数。",
+  "defects": [
+    {
+      "id": "BLOCK-1",
+      "desc": "/api/fund/{code} 单基金行缺 kind/nav/cost/pnl/today_pnl/weight 六个契约字段",
+      "should_be_caught_by": "G-BE-02",
+      "actually_found_at": "S4 代码评审",
+      "check": "E02",
+      "block": "E 穷举对照"
+    },
+    {
+      "id": "PM-D1",
+      "desc": "持仓行「···」菜单四动作全部 ReferenceError 不可达（openEdit is not defined）",
+      "should_be_caught_by": "G-QA-02",
+      "actually_found_at": "S6 终验实操",
+      "check": "B01",
+      "block": "B 交互可点性",
+      "check_runtime": "B03",
+      "_note": "静态 B01 抓形状（裸调未定义标识符），运行时 B03（scoring/ui_smoke.py）抓症状（点下去真报错）。两条都要 —— 已过 --selftest 红绿验证。"
+    },
+    {
+      "id": "SHOULD-2",
+      "desc": "组合卡全灰分支绕过隐私打码，裸拼 toFixed 泄漏真实金额",
+      "should_be_caught_by": "G-DL-01",
+      "actually_found_at": "S4 代码评审",
+      "check": "B02",
+      "block": "B 交互可点性"
+    },
+    {
+      "id": "SHOULD-3",
+      "desc": "否决拟合失败被 except: pass 裸吞，判定翻转且零留痕",
+      "should_be_caught_by": "G-BE-01",
+      "actually_found_at": "S5 注入测试",
+      "check": "X01",
+      "block": "X 注入测试"
+    },
+    {
+      "id": "SHOULD-4",
+      "desc": "weight 计算未防 None，任一 est=None 行令 /api/holdings 整接口 500",
+      "should_be_caught_by": "G-BE-02",
+      "actually_found_at": "S5 测试",
+      "check": "G01",
+      "block": "G 不变量断言"
+    },
+    {
+      "id": "SHOULD-7",
+      "desc": "funds_data.json 损坏时 json.loads 直接抛，无显式错误分支",
+      "should_be_caught_by": "G-BE-01",
+      "actually_found_at": "S4 代码评审",
+      "check": "G02",
+      "block": "G 不变量断言",
+      "_note": "funds_data.json 那处已修（显式 LEDGER_CORRUPT）；但 G02 在同一类里抓到另一处未修：holdings.py:79 _load_method_cfg 无防护"
+    },
+    {
+      "id": "D-02",
+      "desc": "/api/summary 响应缺契约字段 hint",
+      "should_be_caught_by": "G-BE-02",
+      "actually_found_at": "S5 测试",
+      "check": "E02",
+      "block": "E 穷举对照"
+    },
+    {
+      "id": "NIT-5",
+      "desc": "_guard 异常捕获清单缺 Windows 专有 ConnectionAbortedError",
+      "should_be_caught_by": "G-DL-01",
+      "actually_found_at": "S4 代码评审",
+      "check": null,
+      "block": null,
+      "_note": "暂无积木覆盖——静态模式扫描抓不到'清单不全'这类，需要 L 清单穷举积木（待建）"
+    }
+  ]
+}
