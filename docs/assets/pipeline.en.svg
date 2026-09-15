@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="330" viewBox="0 0 980 330" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="pbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbfcfe"/><stop offset="1" stop-color="#eef2f8"/>
+    </linearGradient>
+    <linearGradient id="st" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f2f5fa"/>
+    </linearGradient>
+    <filter id="psh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#1a2b4a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="980" height="330" fill="url(#pbg)" rx="14"/>
+  <text x="490" y="38" font-size="16.8" font-weight="700" fill="#1f2328" text-anchor="middle">Full engineering breakdown → delivery: the S0–S7 pipeline</text>
+  <text x="490" y="59" font-size="10.1" fill="#778ba3" text-anchor="middle">One accountable role · one set of numbered artifacts · one gate per stage</text>
+
+  <!-- 阶段块 -->
+  <g filter="url(#psh)">
+    <g>
+      <rect x="30" y="88" width="100" height="130" rx="12" fill="url(#st)" stroke="#d0d7de"/>
+      <rect x="30" y="88" width="100" height="8" rx="4" fill="#8b949e"/>
+      <text x="80" y="122" font-size="11.8" font-weight="700" fill="#1f2328" text-anchor="middle">S0 Kickoff</text>
+      <text x="80" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">🧭 Orchestrator</text>
+      <text x="80" y="166" font-size="8.8" fill="#57606a" text-anchor="middle">PROJECT_BRIEF</text>
+      <text x="80" y="182" font-size="8.8" fill="#57606a" text-anchor="middle">00-kickoff</text>
+    </g>
+    <g>
+      <rect x="150" y="88" width="100" height="130" rx="12" fill="url(#st)" stroke="#4c8dff"/>
+      <rect x="150" y="88" width="100" height="8" rx="4" fill="#4c8dff"/>
+      <text x="200" y="122" font-size="11.8" font-weight="700" fill="#1f2328" text-anchor="middle">S1 Requirements</text>
+      <text x="200" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">📋 Product Manager</text>
+      <text x="200" y="162" font-size="8.8" fill="#57606a" text-anchor="middle">01-req · 02-prd</text>
+      <text x="200" y="178" font-size="8.8" fill="#57606a" text-anchor="middle">03-ui · 04-wire</text>
+      <text x="200" y="200" font-size="8.4" fill="#2f6fdb" text-anchor="middle">4-part reqs · 4 UI states</text>
+    </g>
+    <g>
+      <rect x="270" y="88" width="100" height="130" rx="12" fill="url(#st)" stroke="#9b6ef3"/>
+      <rect x="270" y="88" width="100" height="8" rx="4" fill="#9b6ef3"/>
+      <text x="320" y="122" font-size="11.8" font-weight="700" fill="#1f2328" text-anchor="middle">S2 Architecture</text>
+      <text x="320" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">🏗️ Architect</text>
+      <text x="320" y="162" font-size="8.8" fill="#57606a" text-anchor="middle">05~08-arch</text>
+      <text x="320" y="178" font-size="8.8" fill="#57606a" text-anchor="middle">09-contract ⚖️</text>
+      <text x="320" y="200" font-size="8.4" fill="#7c4de0" text-anchor="middle">Co-sign &amp; challenge with PM</text>
+    </g>
+    <g>
+      <rect x="390" y="88" width="150" height="130" rx="12" fill="url(#st)" stroke="#2fb380" stroke-width="1.6"/>
+      <rect x="390" y="88" width="150" height="8" rx="4" fill="#2fb380"/>
+      <text x="465" y="122" font-size="11.8" font-weight="700" fill="#1f2328" text-anchor="middle">S3 Development</text>
+      <text x="430" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">💻 Frontend</text>
+      <text x="505" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">⚙️ Backend</text>
+      <line x1="465" y1="146" x2="465" y2="150" stroke="#bbb"/>
+      <text x="430" y="164" font-size="8.8" fill="#57606a" text-anchor="middle">11-code</text>
+      <text x="430" y="180" font-size="8.8" fill="#57606a" text-anchor="middle">12-iface-req</text>
+      <text x="505" y="164" font-size="8.8" fill="#57606a" text-anchor="middle">13-code</text>
+      <text x="505" y="180" font-size="8.8" fill="#57606a" text-anchor="middle">14-impl-rep</text>
+      <rect x="410" y="190" width="110" height="20" rx="10" fill="#e8f7f0"/>
+      <text x="465" y="204" font-size="8.4" fill="#1f8a5f" text-anchor="middle">⇄ Isolated files · parallel</text>
+    </g>
+    <g>
+      <rect x="560" y="88" width="100" height="130" rx="12" fill="url(#st)" stroke="#c0392b"/>
+      <rect x="560" y="88" width="100" height="8" rx="4" fill="#c0392b"/>
+      <text x="610" y="122" font-size="11.8" font-weight="700" fill="#1f2328" text-anchor="middle">S4 Integration</text>
+      <text x="610" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">🛡️ Dev Lead</text>
+      <text x="610" y="162" font-size="8.8" fill="#57606a" text-anchor="middle">15-review</text>
+      <text x="610" y="178" font-size="8.8" fill="#57606a" text-anchor="middle">16-build</text>
+      <text x="610" y="200" font-size="8.4" fill="#c0392b" text-anchor="middle">BLOCK/SHOULD/NIT</text>
+    </g>
+    <g>
+      <rect x="680" y="88" width="100" height="130" rx="12" fill="url(#st)" stroke="#16a085"/>
+      <rect x="680" y="88" width="100" height="8" rx="4" fill="#16a085"/>
+      <text x="730" y="122" font-size="11.8" font-weight="700" fill="#1f2328" text-anchor="middle">S5 Testing</text>
+      <text x="730" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">🔎 QA</text>
+      <text x="730" y="162" font-size="8.8" fill="#57606a" text-anchor="middle">17-plan · 18-report</text>
+      <text x="730" y="178" font-size="8.8" fill="#57606a" text-anchor="middle">Defect list + root cause</text>
+      <text x="730" y="200" font-size="8.4" fill="#0f6e63" text-anchor="middle">≥3 P0 cases per class</text>
+    </g>
+    <g>
+      <rect x="800" y="88" width="76" height="130" rx="12" fill="url(#st)" stroke="#4c8dff"/>
+      <rect x="800" y="88" width="76" height="8" rx="4" fill="#4c8dff"/>
+      <text x="838" y="122" font-size="11.8" font-weight="700" fill="#1f2328" text-anchor="middle">S6 Acceptance</text>
+      <text x="838" y="140" font-size="9.2" fill="#778ba3" text-anchor="middle">📋 PM</text>
+      <text x="838" y="166" font-size="8.8" fill="#57606a" text-anchor="middle">19-accept</text>
+      <text x="838" y="186" font-size="8.4" fill="#2f6fdb" text-anchor="middle">Is it worth shipping?</text>
+    </g>
+    <g>
+      <rect x="896" y="88" width="60" height="130" rx="12" fill="#1a7f37"/>
+      <text x="926" y="122" font-size="10.9" font-weight="700" fill="#ffffff" text-anchor="middle">S7</text>
+      <text x="926" y="140" font-size="10.9" font-weight="700" fill="#ffffff" text-anchor="middle">Delivery</text>
+      <text x="926" y="162" font-size="8.8" fill="#cdebd8" text-anchor="middle">Triple sign-off</text>
+      <text x="926" y="178" font-size="8.8" fill="#cdebd8" text-anchor="middle">retro</text>
+    </g>
+  </g>
+
+  <!-- 箭头 -->
+  <g stroke="#8fa3c0" stroke-width="1.6" fill="none">
+    <line x1="130" y1="153" x2="148" y2="153" marker-end="url(#parr)"/>
+    <line x1="250" y1="153" x2="268" y2="153" marker-end="url(#parr)"/>
+    <line x1="370" y1="153" x2="388" y2="153" marker-end="url(#parr)"/>
+    <line x1="540" y1="153" x2="558" y2="153" marker-end="url(#parr)"/>
+    <line x1="660" y1="153" x2="678" y2="153" marker-end="url(#parr)"/>
+    <line x1="780" y1="153" x2="798" y2="153" marker-end="url(#parr)"/>
+    <line x1="876" y1="153" x2="894" y2="153" stroke="#1a7f37" marker-end="url(#parrg)"/>
+  </g>
+  <defs>
+    <marker id="parr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8fa3c0"/></marker>
+    <marker id="parrg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1a7f37"/></marker>
+  </defs>
+
+  <!-- 门禁点 -->
+  <g font-size="8.8" fill="#9a6700">
+    <circle cx="145" cy="240" r="9" fill="#fff8e1" stroke="#d4a017"/><text x="145" y="244" text-anchor="middle" font-weight="700">G</text>
+    <circle cx="385" cy="240" r="9" fill="#fff8e1" stroke="#d4a017"/><text x="385" y="244" text-anchor="middle" font-weight="700">G</text>
+    <circle cx="675" cy="240" r="9" fill="#fff8e1" stroke="#d4a017"/><text x="675" y="244" text-anchor="middle" font-weight="700">G</text>
+    <circle cx="890" cy="240" r="9" fill="#fff8e1" stroke="#d4a017"/><text x="890" y="244" text-anchor="middle" font-weight="700">G</text>
+    <line x1="200" y1="222" x2="145" y2="233" stroke="#d4a017" stroke-dasharray="3 3"/>
+    <line x1="320" y1="222" x2="385" y2="233" stroke="#d4a017" stroke-dasharray="3 3"/>
+    <line x1="730" y1="222" x2="675" y2="233" stroke="#d4a017" stroke-dasharray="3 3"/>
+    <line x1="926" y1="222" x2="890" y2="233" stroke="#d4a017" stroke-dasharray="3 3"/>
+    <text x="265" y="248" text-anchor="middle">PASS / CONCERN / FAIL per stage</text>
+    <text x="782" y="248" text-anchor="middle">No triple sign-off, no delivery</text>
+  </g>
+
+  <rect x="30" y="272" width="926" height="40" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="490" y="290" font-size="9.7" fill="#57606a" text-anchor="middle">Iron rules: the orchestrator never does the work · never dispatch two writers to one file · never water down gates · sub-agents read only what they need · interrupt the user only in 4 cases</text>
+  <text x="490" y="306" font-size="9.7" fill="#57606a" text-anchor="middle">The costliest waste: dispatching a requirements defect as a dev bug — triage belongs to the dev lead</text>
+</svg>

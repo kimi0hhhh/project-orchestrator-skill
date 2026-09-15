@@ -12,7 +12,7 @@
 
 > 把需求说清楚、回答几个简短的追问，几小时后回来，一个完整的产品项目已经躺在电脑里：PRD、接口契约、可运行代码、测试报告，还有一间记录六个 agent 如何协作的作战室。当然，它比你亲自下场显著更慢——文末「诚实地说说优缺点」有一笔一笔的账。
 
-> 🇬🇧 English: [README.en.md](README.en.md)
+[![简体中文](https://img.shields.io/badge/简体中文-current-2F7D4F)](README.md) [![English](https://img.shields.io/badge/English-switch-8FA09E)](README.en.md)
 
 ---
 

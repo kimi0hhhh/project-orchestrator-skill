@@ -1,6 +1,6 @@
 # Project Orchestrator · A Multi-Agent Collaboration Dev Framework
 
-![Project Orchestrator framework banner](docs/assets/banner.svg)
+![Project Orchestrator framework banner](docs/assets/banner.en.svg)
 
 ![version](https://img.shields.io/badge/version-v4.1-green) ![stage](https://img.shields.io/badge/status-beta-blue) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white) ![platform](https://img.shields.io/badge/platform-ZCode%20%7C%20OpenCode%20%7C%20WorkBuddy%20%7C%20Universal-orange) ![license](https://img.shields.io/badge/license-MIT-red) ![evidence](https://img.shields.io/badge/dev_validated-2%20real%20products-8A2BE2)
 
@@ -8,7 +8,7 @@
 
 > State your requirements, answer a few short follow-up questions, and hours later a complete product project is sitting on your machine: a PRD, an API contract, runnable code, a test report — plus a war room recording how six agents worked together. Fair warning: it is markedly slower than doing it yourself — see "An honest look" at the end for the itemized bill.
 
-> 🇨🇳 中文版: [README.md](README.md)
+[![English](https://img.shields.io/badge/English-current-2F7D4F)](README.en.md) [![简体中文](https://img.shields.io/badge/简体中文-switch-8FA09E)](README.md)
 
 ---
 
@@ -40,9 +40,9 @@ Full usage: [docs/USAGE.md](docs/USAGE.md) (docs are currently Chinese-only)
 
 ## Pipeline & topology
 
-![S0-S7 delivery pipeline](docs/assets/pipeline.svg)
+![S0-S7 delivery pipeline](docs/assets/pipeline.en.svg)
 
-![Role topology](docs/assets/topology.svg)
+![Role topology](docs/assets/topology.en.svg)
 
 Each stage: one accountable role, numbered artifacts, one gate. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -91,14 +91,14 @@ Break any one and the protocol voids itself:
 
 Watch the multi-agent interaction live in the browser — stages, cards, message stream, token ledger:
 
-![Board main view](docs/assets/board-main.png)
+![Board main view (Chinese UI)](docs/assets/board-main.png)
 
 - **Console**: stage / completion / pending decisions; opens the battle map in one click;
 - **Agent cards**: status, progress, model triple-reporting, silence timer, resume with memory;
 - **Message stream**: deliveries and progress pinned live, artifacts viewable on click;
 - **Token ledger**: per-role consumption bars, real values read from session logs.
 
-![Battle map overlay](docs/assets/board-plan.png)
+![Battle map overlay (Chinese UI)](docs/assets/board-plan.png)
 
 How it works: [docs/BOARD.md](docs/BOARD.md) (screenshots use demo data).
 
