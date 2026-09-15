@@ -177,12 +177,15 @@ bash install.sh        # Windows PowerShell: .\install.ps1
 
 ## Roadmap
 
-> Changelog：v4.0（ZCode 版开源）已发布；v4.1（关键路径重叠、变更分诊、runtime 收编、通用版）已发布。
+> Changelog：v4.0（ZCode 版开源）已发布；v4.1（关键路径重叠、变更分诊、runtime 收编、通用版）已发布；
+> v4.3（ZCode 版：耗时账单 + 派发管家 + 提效纪律，并行对照 −56%）已发布；
+> **v4.4（OpenCode 版：评分尺 + 看板端口纪律 + S7 收尾闭环）已发布**。
 
 - [x] **通用版**（`universal/`，平台无关协议 + 三档能力适配 + 自举移植提示词）——任何 agent 工具的开发者按 [universal/PORTING.md](universal/PORTING.md) 移植，30–60 分钟完成
-- [x] OpenCode 版 v4.1（`opencode/`，14 条机制移植，已入库）
+- [x] OpenCode 版 v4.1 → **v4.4**（`opencode/`：v4.1 移植 14 条机制；v4.4 加 `scoring/` 评分尺、看板端口纪律与服务身份守卫、S7 收尾闭环）· 升级指南 [docs/UPGRADE-v4.4-opencode.md](docs/UPGRADE-v4.4-opencode.md)
 - [x] WorkBuddy 版 v4.2（`workbuddy/`，深度适配：原生 teams/tasks/台账优先）
 - [ ] 看门狗证据链加固（pid 登记 / 文件活动兜底 / stalled 宽限，ZCode 实测 17 次误报待修）
+- [ ] v4.4 的**协议级变更**移植到 ZCode / WorkBuddy / 通用版（门禁 `G-QA-02` 运行时点击红线、新增工件 `20-closeout`、S7 就绪清单第 5/6 项）
 
 详见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
@@ -334,10 +337,14 @@ The framework has been validated through multiple real development runs (control
 
 ## Roadmap
 
-> Changelog: v4.1 — universal/ + opencode/ + workbuddy/ editions added; runtime consolidated.
+> Changelog: v4.0 ZCode edition open-sourced · v4.1 universal/ + opencode/ + workbuddy/ editions added, runtime consolidated ·
+> v4.3 ZCode edition (timeline accounting + dispatch butler + efficiency discipline, −56% wall-clock in the parallel A/B) ·
+> **v4.4 OpenCode edition (scoring ruler + board port discipline + S7 closeout loop)**.
 
-- [ ] OpenCode edition (the second; shared contracts & stage definitions)
-- [ ] Platform-neutral protocol + adapter layer
+- [x] OpenCode edition (the second; shared contracts & stage definitions) — shipped in v4.1, now at **v4.4** (scoring ruler, port discipline & service identity guard, S7 closeout loop) · [upgrade guide](docs/UPGRADE-v4.4-opencode.md)
+- [x] Platform-neutral protocol + adapter layer — shipped in v4.1 (`universal/`)
+- [ ] Watchdog evidence-chain hardening (pid registry / file-activity fallback / stalled grace; 17 false positives observed on ZCode)
+- [ ] Port v4.4's **protocol-level changes** to the ZCode / WorkBuddy / universal editions (G-QA-02 runtime click red-line, new `20-closeout` artifact, S7 readiness items 5–6)
 
 See [docs/ROADMAP.md](docs/ROADMAP.md).
 
