@@ -1,7 +1,7 @@
 """派发管家：把主 Agent 每次派发前后的机械动作收成两条命令。
 
 prepare —— 预检允许读文件（缺一不派）→ 回读该角色历史记忆 → 上看板节点 →
-           生成可直接粘进 Agent 工具的派发 prompt。
+           生成可直接粘进 task 工具的派发 prompt。
            一条命令顶掉原六步人工动作；预检不过就拒绝出 prompt
            （引用未落盘文件曾造成整轮返工，98k tokens）。
 close   —— 验收工件真实存在且非空（不凭回传信号放行）→ 可选补记 finish →
@@ -146,10 +146,10 @@ def cmd_prepare(a):
         pf.write_text(prompt, encoding="utf-8")
         n = len(prompt.encode("utf-8"))
         print(f"✅ 派发任务书已落盘：{pf}（{n} 字节）")
-        print("【Agent 工具调用】prompt 用一行引用（主 Agent 上下文只背这一行，不背任务书全文）：")
+        print("【task 工具调用】prompt 用一行引用（主 Agent 上下文只背这一行，不背任务书全文）：")
         print(f"   读取 {pf} 并严格执行：先完整读完任务书，再按【必须写】【硬约束】【上报协议】执行")
     else:
-        print("\n==================== 派发 prompt 开始（subagent_type=%s）====================" % a.agent)
+        print("\n==================== 派发 prompt 开始（agent=%s）====================" % a.agent)
         print(prompt)
         print("==================== 派发 prompt 结束 ====================")
         print("提示：长会话/多次派发建议加 --prompt-file，主 Agent 每次派发只背一行引用")
@@ -190,7 +190,7 @@ def main():
     ap = argparse.ArgumentParser(prog="dispatch", description="派发管家：prepare 派发 / close 验收")
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--project", default=None, help="项目 id，默认当前项目")
-    common.add_argument("--agent", required=True, help="角色 id（subagent_type 同名）")
+    common.add_argument("--agent", required=True, help="角色 id（= OpenCode 的 agent 名）")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("prepare", parents=[common], help="预检 + 记忆回读 + 看板节点 + 生成派发 prompt")

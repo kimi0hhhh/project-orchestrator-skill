@@ -253,7 +253,8 @@ def build_parser():
     p.add_argument("--path", default=None,
                    help="导出目标相对路径，缺省=项目目录下 token-export.json")
 
-    p = add("actual-model", "从 ZCode 会话日志读**实际**模型与思考档位（硬证据，主 Agent 用）")
+    p = add("actual-model", "从客户端会话记录读**实际**模型与思考档位（硬证据，主 Agent 用）"
+                            "：ZCode 读会话日志 / OpenCode 读 session 表，runtime 自适应")
     p.add_argument("--agent", required=True)
     p.add_argument("--zcode-agent", dest="zcode_agent", default=None,
                    help="Agent 工具返回的 agent_xxx（子 agent 会话 id），首次登记用")
@@ -339,15 +340,15 @@ def main():
                 tag = f"　档 {ms.get('effort')}" if ms.get("effort") else ""
                 print(f"本会话实际模型（主会话日志）：{mm}{tag}")
                 if eff:
-                    print("  ⚠ 以下角色的配置 ≠ 本会话模型 —— 用 general-purpose 派发**不会**按配置生效：")
+                    print("  ⚠ 以下角色的配置 ≠ 本会话模型 —— 用 task 的 general 子 agent 派发**不会**按配置生效：")
                     for aid, v in eff:
                         print(f"     {aid:<16} 配置 {v}")
-                    print("     → 要么新开会话用 subagent_type:<角色id> 派发（契约钉模型）；")
-                    print("     → 要么把 ZCode 会话模型切到该值（即时生效，但主 Agent 也跟着变）。")
+                    print("     → 要么新开会话用 agent 名 = 角色 id 派发（契约钉模型）；")
+                    print("     → 要么把当前会话模型切到该值（即时生效，但主 Agent 也跟着变）。")
                 else:
                     print("  ✓ 各角色配置与本会话模型一致，直接派发即按配置执行。")
-            print("派发用法（ZCode）：subagent_type 直接用角色 id（角色契约即子 agent 定义，")
-            print("模型钉在 frontmatter 里）；本会话未加载时退回 general-purpose + 读契约。")
+            print("派发用法（OpenCode）：agent 名直接用角色名（角色契约即子 agent 定义，")
+            print("模型钉在 frontmatter 里）；本会话未加载时退回 task 的 general 子 agent + 读契约。")
             print("改动角色定义需新开会话生效；spawn --model 登记上表值作为台账。")
     elif a.cmd == "spawn":
         out(call("POST", "/api/spawn", {"agent": a.agent, "pid": a.pid, "model": a.model,
